@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <form method="post" class="mb-4">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6 col-6">
+        <label for="medida_alto" class="form-label">Alto (centimetros)</label>
+        <input type="number" step="any" min="0" class="form-control" id="medida_alto" name="medida_alto" required>
+      </div>
+      <div class="col-md-6 col-6">
+        <label for="medida_ancho" class="form-label">Ancho (centimetros)</label>
+        <input type="number" step="any" min="0" class="form-control" id="medida_ancho" name="medida_ancho" required>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="material" class="form-label">Material</label>
+      <select class="form-select" id="material" name="material" required>
+        <option value="" disabled selected>Seleccione un Material</option>
+        {% for mat in materiales %}
+          <option value="{{ mat }}">{{ mat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="cantidad" class="form-label">Cantidad</label>
+      <input type="number" step="any" min="1" class="form-control" id="cantidad" name="cantidad" rows="2" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Crear Presupuesto</button>
+  </form>
+{% endblock %}

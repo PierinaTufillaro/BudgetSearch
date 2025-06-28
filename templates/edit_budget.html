@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Editar Presupuesto</h2>
+  <form method="post" class="mb-4">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6 col-6">
+        <label for="medida_alto" class="form-label">Medida (alto)</label>
+        <input type="number" step="any" min="0" class="form-control" id="medida_alto" name="medida_alto" value="{{ presupuesto.medida_alto }}" required>
+      </div>
+      <div class="col-md-6 col-6">
+        <label for="medida_ancho" class="form-label">Medida (ancho)</label>
+        <input type="number" step="any" min="0" class="form-control" id="medida_ancho" name="medida_ancho" value="{{ presupuesto.medida_ancho }}" required>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="material" class="form-label">Material</label>
+      <input type="text" class="form-control" id="material" name="material" value="{{ presupuesto.material }}" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="monto" class="form-label">Monto</label>
+      <input class="form-control" id="monto" name="monto" rows="2" value={{ presupuesto.monto }} required>
+    </div>
+
+    <button type="submit" class="btn btn-success">Guardar cambios</button>
+    <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">Cancelar</a>
+  </form>
+{% endblock %}

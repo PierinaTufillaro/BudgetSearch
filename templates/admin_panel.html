@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <form method="post" class="mb-4">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6 col-6">
+        <label for="medida_alto" class="form-label">Alto (centimetros)</label>
+        <input type="number" step="any" min="0" class="form-control" id="medida_alto" name="medida_alto" required>
+      </div>
+      <div class="col-md-6 col-6">
+        <label for="medida_ancho" class="form-label">Ancho (centimetros)</label>
+        <input type="number" step="any" min="0" class="form-control" id="medida_ancho" name="medida_ancho" required>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="material" class="form-label">Material</label>
+      <input type="text" class="form-control" id="material" name="material" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="monto" class="form-label">Monto</label>
+      <input type="number" step="any" min="0" class="form-control" id="monto" name="monto" rows="2" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Agregar Presupuesto</button>
+  </form>
+
+  <h2>Presupuestos guardados</h2>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Alto</th>
+          <th>Ancho</th>
+          <th>Material</th>
+          <th>Monto</th>
+          {% if login %}
+          <th>Acciones</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in presupuestos %}
+          <tr>
+            <td>{{ p.medida_alto }}</td>
+            <td>{{ p.medida_ancho }}</td>
+            <td>{{ p.material }}</td>
+            <td>{{ p.monto }}</td>
+            {% if login %}
+            <td>
+              <a href="{{ url_for('edit_budget', presupuesto_id=p.id) }}" class="btn btn-sm btn-warning">Editar</a>
+              <a href="{{ url_for('delete', presupuesto_id=p.id) }}" class="btn btn-sm btn-danger">Eliminar</a>
+            </td>
+            {% endif %}
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="{% if login %}5{% else %}4{% endif %}" class="text-center">No hay presupuestos aún.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
