@@ -2,28 +2,52 @@
 
 {% block content %}
   <form method="post" class="mb-4">
-    <div class="row g-3 mb-3">
-      <div class="col-md-6 col-6">
-        <label for="medida_alto" class="form-label">Alto (centimetros)</label>
-        <input type="number" step="any" min="0" class="form-control" id="medida_alto" name="medida_alto" required>
-      </div>
-      <div class="col-md-6 col-6">
-        <label for="medida_ancho" class="form-label">Ancho (centimetros)</label>
-        <input type="number" step="any" min="0" class="form-control" id="medida_ancho" name="medida_ancho" required>
-      </div>
-    </div>
 
+    <!-- MATERIAL -->
     <div class="mb-3">
       <label for="material" class="form-label">Material</label>
-      <input type="text" class="form-control" id="material" name="material" required>
+      <select class="form-select" id="material" name="material" required>
+        <option value="" disabled selected>Seleccione un Material</option>
+        {% for mat in materiales %}
+          <option value="{{ mat }}">{{ mat }}</option>
+        {% endfor %}
+      </select>    
     </div>
 
+    <!-- MONTO -->
     <div class="mb-3">
-      <label for="monto" class="form-label">Monto</label>
-      <input type="number" step="any" min="0" class="form-control" id="monto" name="monto" rows="2" required>
+      <label for="monto" class="form-label">Monto por cm2</label>
+      <input type="number" step="any" min="0" class="form-control" id="monto" name="monto" required>
     </div>
 
-    <button type="submit" class="btn btn-primary">Agregar Presupuesto</button>
+    <!-- GRUPOS DE MEDIDAS -->
+    <div id="medidas-container">
+      <div class="row g-3 mb-3 medida-group">
+        <div class="col-md-4">
+          <label class="form-label">Alto (cm)</label>
+          <input type="number" step="any" min="0" class="form-control" name="medida_alto[]" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Ancho (cm)</label>
+          <input type="number" step="any" min="0" class="form-control" name="medida_ancho[]" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">% Descuento</label>
+          <input type="number" step="any" min="0" max="100" class="form-control" name="descuento[]" value="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA DE BOTONES -->
+    <div class="row g-2">
+      <div class="col-md-auto">
+        <button type="button" class="btn btn-secondary" onclick="agregarMedida()">Agregar otra medida</button>
+      </div>
+      <div class="col-md-auto">
+        <button type="submit" class="btn btn-primary">Agregar Presupuesto</button>
+      </div>
+    </div>
+
   </form>
 
   <h2>Presupuestos guardados</h2>
@@ -31,35 +55,59 @@
     <table class="table table-striped">
       <thead>
         <tr>
+          <th>Material</th>
+          <th>Monto por cm2</th>
           <th>Alto</th>
           <th>Ancho</th>
-          <th>Material</th>
-          <th>Monto</th>
+          <th>% Descuento</th>
+          <th>Monto Final</th>
           {% if login %}
           <th>Acciones</th>
           {% endif %}
         </tr>
       </thead>
       <tbody>
-        {% for p in presupuestos %}
+        {% for b in budgets %}
           <tr>
-            <td>{{ p.medida_alto }}</td>
-            <td>{{ p.medida_ancho }}</td>
-            <td>{{ p.material }}</td>
-            <td>{{ p.monto }}</td>
+            <td>{{ b.material }}</td>
+            <td>{{ b.monto }}</td>
+            <td>{{ b.medida_alto }}</td>
+            <td>{{ b.medida_ancho }}</td>
+            <td>{{ b.descuento }}</td>
+            <td>{{ b.monto * b.medida_alto * b.medida_ancho * (1 - b.descuento / 100) }}</td>
             {% if login %}
             <td>
-              <a href="{{ url_for('edit_budget', presupuesto_id=p.id) }}" class="btn btn-sm btn-warning">Editar</a>
-              <a href="{{ url_for('delete', presupuesto_id=p.id) }}" class="btn btn-sm btn-danger">Eliminar</a>
+              <a href="{{ url_for('edit_budget', budget_id=b.id) }}" class="btn btn-sm btn-warning">Editar</a>
+              <a href="{{ url_for('delete', budget_id=b.id) }}" class="btn btn-sm btn-danger">Eliminar</a>
             </td>
             {% endif %}
           </tr>
         {% else %}
           <tr>
-            <td colspan="{% if login %}5{% else %}4{% endif %}" class="text-center">No hay presupuestos aún.</td>
+            <td colspan="{% if login %}7{% else %}6{% endif %}" class="text-center">No hay presupuestos aún.</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <script>
+    function agregarMedida() {
+      const container = document.getElementById('medidas-container');
+      const group = document.querySelector('.medida-group');
+      const clone = group.cloneNode(true);
+
+      clone.querySelectorAll('input').forEach(input => {
+        if (input.name.includes('medida_alto')) {
+          input.value = '';
+        } else if (input.name.includes('medida_ancho')) {
+          input.value = '';
+        } else if (input.name.includes('descuento')) {
+          input.value = '0';
+        }
+      });
+
+      container.appendChild(clone);
+    }
+  </script>
 {% endblock %}

@@ -1,6 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+
+# Configuración DB SQLite
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///budgets.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
 # Contraseña simple para la pantalla inicial
 pwd = "mi_contraseña_segura"
@@ -12,7 +18,21 @@ MATERIALES = ["Madera", "Metal", "Plástico", "Vidrio"]
 
 logged_in = False  # Estado login avanzado
 
-presupuestos = []
+# Modelo Budget
+class Budget(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    medida_alto = db.Column(db.Float, nullable=False)
+    medida_ancho = db.Column(db.Float, nullable=False)
+    descuento = db.Column(db.Float, default=0)
+    material = db.Column(db.String(50), nullable=False)
+    monto = db.Column(db.Float, nullable=False)
+
+    def __repr__(self):
+        return f'<Budget {self.id} {self.material}>'
+
+# Crear tablas si no existen
+with app.app_context():
+    db.create_all()
 
 @app.route("/", methods=["GET", "POST"])
 def client_login():
@@ -44,70 +64,71 @@ def admin_login():
     return render_template("admin_login.html", error=error)
 
 @app.route("/logout")
-def logout():
+def admin_logout():
     global logged_in
     logged_in = False
     return redirect(url_for("client_login"))
 
 @app.route("/admin_panel", methods=["GET"])
 def admin_panel():
-    global logged_in
     if not logged_in:
         return redirect(url_for("admin_login"))
-    return render_template("admin_panel.html", presupuestos=presupuestos, login=logged_in)
+    budgets = Budget.query.all()
+    return render_template("admin_panel.html", budgets=budgets, login=logged_in, materiales=MATERIALES)
 
 @app.route("/admin_panel", methods=["POST"])
-def agregar_presupuesto():
-    global logged_in
+def add_budget():
     if not logged_in:
         return redirect(url_for("admin_login"))
 
-    medida_alto = request.form["medida_alto"]
-    medida_ancho = request.form["medida_ancho"]
     material = request.form["material"]
-    monto = request.form["monto"]
+    monto = float(request.form["monto"])
 
-    presupuestos.append({
-        "id": len(presupuestos),
-        "medida_alto": medida_alto,
-        "medida_ancho": medida_ancho,
-        "material": material,
-        "monto": monto
-    })
+    altos = request.form.getlist("medida_alto[]")
+    anchos = request.form.getlist("medida_ancho[]")
+    descuentos = request.form.getlist("descuento[]")
+
+    for alto, ancho, descuento in zip(altos, anchos, descuentos):
+        budget = Budget(
+            medida_alto=float(alto),
+            medida_ancho=float(ancho),
+            descuento=float(descuento),
+            material=material,
+            monto=monto
+        )
+        db.session.add(budget)
+    db.session.commit()
+
     return redirect(url_for("admin_panel"))
 
-# Editar y eliminar igual que antes, pero con ruta /admin_panel para consistencia
-
-@app.route("/delete/<int:presupuesto_id>")
-def delete(presupuesto_id):
-    global logged_in
+@app.route("/delete/<int:budget_id>")
+def delete(budget_id):
     if not logged_in:
         return redirect(url_for("admin_login"))
 
-    global presupuestos
-    presupuestos = [p for p in presupuestos if p["id"] != presupuesto_id]
-    for idx, p in enumerate(presupuestos):
-        p["id"] = idx
+    budget = Budget.query.get_or_404(budget_id)
+    db.session.delete(budget)
+    db.session.commit()
+
     return redirect(url_for("admin_panel"))
 
-@app.route("/edit_budget/<int:presupuesto_id>", methods=["GET", "POST"])
-def edit_budget(presupuesto_id):
-    global logged_in
+@app.route("/edit_budget/<int:budget_id>", methods=["GET", "POST"])
+def edit_budget(budget_id):
     if not logged_in:
         return redirect(url_for("admin_login"))
 
-    presupuesto = next((p for p in presupuestos if p["id"] == presupuesto_id), None)
-    if not presupuesto:
-        return redirect(url_for("admin_panel"))
+    budget = Budget.query.get_or_404(budget_id)
 
     if request.method == "POST":
-        presupuesto["medida_alto"] = request.form["medida_alto"]
-        presupuesto["medida_ancho"] = request.form["medida_ancho"]
-        presupuesto["material"] = request.form["material"]
-        presupuesto["monto"] = request.form["monto"]
+        budget.medida_alto = float(request.form["medida_alto"])
+        budget.medida_ancho = float(request.form["medida_ancho"])
+        budget.descuento = float(request.form.get("descuento", "0"))
+        budget.material = request.form["material"]
+        budget.monto = float(request.form["monto"])
+        db.session.commit()
         return redirect(url_for("admin_panel"))
 
-    return render_template("edit_budget.html", presupuesto=presupuesto, login=logged_in)
+    return render_template("edit_budget.html", budget=budget, login=logged_in, materiales=MATERIALES)
 
 if __name__ == "__main__":
     app.run(debug=True)
