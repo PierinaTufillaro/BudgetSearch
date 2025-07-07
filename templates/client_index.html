@@ -1,33 +1,72 @@
 {% extends "base.html" %}
-
 {% block content %}
-  <form method="post" class="mb-4">
+
+<style>
+  .card-custom {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+</style>
+
+<div class="card-custom">
+  <h2 class="mb-4">Calcular Presupuesto</h2>
+
+  <form method="post" action="{{ url_for('client_index') }}">
     <div class="row g-3 mb-3">
-      <div class="col-md-6 col-6">
-        <label for="medida_alto" class="form-label">Alto (cm2)</label>
-        <input type="number" step="any" min="0" class="form-control" id="medida_alto" name="medida_alto" required>
+      <div class="col-md-6">
+        <label for="ancho" class="form-label">Ancho (cm)</label>
+        <input type="number" step="any" min="0" class="form-control" id="ancho" name="ancho" required value="{{ request.form.ancho }}">
       </div>
-      <div class="col-md-6 col-6">
-        <label for="medida_ancho" class="form-label">Ancho (cm2)</label>
-        <input type="number" step="any" min="0" class="form-control" id="medida_ancho" name="medida_ancho" required>
+      <div class="col-md-6">
+        <label for="alto" class="form-label">Alto (cm)</label>
+        <input type="number" step="any" min="0" class="form-control" id="alto" name="alto" required value="{{ request.form.alto }}">
       </div>
     </div>
 
     <div class="mb-3">
       <label for="material" class="form-label">Material</label>
       <select class="form-select" id="material" name="material" required>
-        <option value="" disabled selected>Seleccione un Material</option>
+        <option value="" disabled {% if not request.form.material %}selected{% endif %}>Seleccione un Material</option>
         {% for mat in materiales %}
-          <option value="{{ mat }}">{{ mat }}</option>
+          <option value="{{ mat.id }}" {% if request.form.material == mat.id|string %}selected{% endif %}>
+            {{ mat.nombre }}
+          </option>
         {% endfor %}
       </select>
     </div>
 
     <div class="mb-3">
       <label for="cantidad" class="form-label">Cantidad</label>
-      <input type="number" step="any" min="1" class="form-control" id="cantidad" name="cantidad" rows="2" required>
+      <input type="number" step="1" min="1" class="form-control" id="cantidad" name="cantidad" required value="{{ request.form.cantidad }}">
     </div>
 
-    <button type="submit" class="btn btn-primary">Buscar Presupuesto</button>
+    <div class="form-check mb-4">
+      <input class="form-check-input" type="checkbox" id="laminado" name="laminado" {% if request.form.laminado %}checked{% endif %}>
+      <label class="form-check-label" for="laminado">
+        Incluir laminado
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-success">Calcular Presupuesto</button>
   </form>
+
+  {% if resultado %}
+    {% if resultado.error %}
+      <div class="alert alert-danger mt-4">{{ resultado.error }}</div>
+    {% else %}
+      <div class="alert alert-success mt-4">
+        <p><strong>Material:</strong> {{ resultado.material }}</p>
+        <p><strong>Área:</strong> {{ resultado.area }} cm²</p>
+        <p><strong>Laminado:</strong> {{ 'Sí' if resultado.laminado else 'No' }}</p>
+        <p><strong>Descuento por cantidad aplicado:</strong> {{ resultado.descuento_cantidad }} %</p>
+        <p><strong>Precio unitario (por pieza):</strong> ${{ resultado.precio_unitario }}</p>
+        <p><strong>Precio total:</strong> ${{ resultado.precio_total }}</p>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+
 {% endblock %}

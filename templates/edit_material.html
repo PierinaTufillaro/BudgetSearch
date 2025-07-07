@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card p-4 mb-4">
+  <h3 class="mb-4">Editar Material: {{ material.nombre }}</h3>
+
+  <form method="post">
+    <div class="mb-3">
+      <label for="material" class="form-label">Nombre del Material</label>
+      <input type="text" class="form-control" id="material" name="material" value="{{ material.nombre }}" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="monto" class="form-label">Monto por cm²</label>
+      <input type="number" class="form-control" id="monto" name="monto" value="{{ material.monto_por_cm2 }}" step="any" min="0" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="laminado" class="form-label">% por laminado</label>
+      <input type="number" class="form-control" id="laminado" name="laminado" value="{{ material.porcentaje_por_laminado }}" step="any" min="0" max="100">
+    </div>
+
+    <hr>
+
+    <h5>Rangos de presupuesto</h5>
+    {% for p in presupuestos %}
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label">Desde (cm²)</label>
+        <input type="number" class="form-control" name="medida_inicio[]" value="{{ p.medida_inicio }}" step="any" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Hasta (cm²)</label>
+        <input type="number" class="form-control" name="medida_fin[]" value="{{ p.medida_fin }}" step="any" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Monto</label>
+        <input type="number" class="form-control" name="monto_entre_medidas[]" value="{{ p.monto_entre_medidas }}" step="any" required>
+      </div>
+    </div>
+    {% endfor %}
+
+    <hr>
+
+    <h5>Descuentos por cantidad</h5>
+    {% for d in descuentos %}
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label">Desde</label>
+        <input type="number" class="form-control" name="cantidad_inicio[]" value="{{ d.cantidad_inicio }}" step="any" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Hasta</label>
+        <input type="number" class="form-control" name="cantidad_fin[]" value="{{ d.cantidad_fin }}" step="any" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">% Descuento</label>
+        <input type="number" class="form-control" name="porcentaje_descuento[]" value="{{ d.porcentaje_descuento_por_cantidad }}" step="any" required>
+      </div>
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-success mt-3">Guardar cambios</button>
+    <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary mt-3">Cancelar</a>
+  </form>
+</div>
+
+{% endblock %}

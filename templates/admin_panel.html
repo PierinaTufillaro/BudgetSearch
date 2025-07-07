@@ -1,113 +1,230 @@
 {% extends "base.html" %}
-
 {% block content %}
-  <form method="post" class="mb-4">
 
+<style>
+  .card-custom {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .grupo-contenedor {
+    position: relative;
+    padding-right: 3rem;
+    border-radius: 0.5rem;
+    border: 1px dashed #ccc;
+    margin-bottom: 1rem;
+    padding: 1rem;
+  }
+
+  .btn-eliminar-grupo {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
+  }
+
+  .section-title {
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: bold;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 0.5rem;
+  }
+</style>
+
+<!-- ========================= FORMULARIO PARA CARGA NUEVA ========================= -->
+<div class="card-custom">
+  <h2 class="mb-4">🧾 Agregar nuevo material</h2>
+
+  <form method="post">
     <!-- MATERIAL -->
     <div class="mb-3">
-      <label for="material" class="form-label">Material</label>
-      <select class="form-select" id="material" name="material" required>
-        <option value="" disabled selected>Seleccione un Material</option>
-        {% for mat in materiales %}
-          <option value="{{ mat }}">{{ mat }}</option>
-        {% endfor %}
-      </select>    
+      <label for="material" class="form-label">Nombre del material</label>
+      <input type="text" class="form-control" id="material" name="material" required />
     </div>
 
-    <!-- MONTO -->
-    <div class="mb-3">
-      <label for="monto" class="form-label">Monto por cm2</label>
-      <input type="number" step="any" min="0" class="form-control" id="monto" name="monto" required>
-    </div>
-
-    <!-- GRUPOS DE MEDIDAS -->
-    <div id="medidas-container">
-      <div class="row g-3 mb-3 medida-group">
-        <div class="col-md-4">
-          <label class="form-label">Alto (cm)</label>
-          <input type="number" step="any" min="0" class="form-control" name="medida_alto[]" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Ancho (cm)</label>
-          <input type="number" step="any" min="0" class="form-control" name="medida_ancho[]" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">% Descuento</label>
-          <input type="number" step="any" min="0" max="100" class="form-control" name="descuento[]" value="0">
-        </div>
+    <!-- MONTO Y LAMINADO -->
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="monto" class="form-label">Monto por cm²</label>
+        <input type="number" step="any" min="0" class="form-control" id="monto" name="monto" required />
+      </div>
+      <div class="col-md-6">
+        <label for="laminado" class="form-label">% por laminado</label>
+        <input type="number" step="any" min="0" max="100" class="form-control" id="laminado" name="laminado" value="0" />
       </div>
     </div>
 
-    <!-- FILA DE BOTONES -->
-    <div class="row g-2">
-      <div class="col-md-auto">
-        <button type="button" class="btn btn-secondary" onclick="agregarMedida()">Agregar otra medida</button>
-      </div>
-      <div class="col-md-auto">
-        <button type="submit" class="btn btn-primary">Agregar Presupuesto</button>
+    <!-- PRESUPUESTOS -->
+    <h5 class="mt-4">📏 Rangos de presupuesto (cm²)</h5>
+    <div id="presupuestos-container">
+      <div class="grupo-contenedor presupuesto-group">
+        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none" onclick="this.parentElement.remove()">Eliminar</button>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Desde</label>
+            <input type="number" step="any" min="0" class="form-control" name="medida_inicio[]" required />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Hasta</label>
+            <input type="number" step="any" min="0" class="form-control" name="medida_fin[]" required />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Monto</label>
+            <input type="number" step="any" min="0" class="form-control" name="monto_entre_medidas[]" required />
+          </div>
+        </div>
       </div>
     </div>
+    <button type="button" class="btn btn-outline-primary mb-3" onclick="agregarPresupuesto()">+ Agregar</button>
 
+    <!-- DESCUENTOS -->
+    <h5 class="mt-4">🎯 Descuentos por cantidad</h5>
+    <div id="descuentos-container">
+      <div class="grupo-contenedor descuento-group">
+        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none" onclick="this.parentElement.remove()">Eliminar</button>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Cantidad desde</label>
+            <input type="number" step="any" min="0" class="form-control" name="cantidad_inicio[]" required />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Cantidad hasta</label>
+            <input type="number" step="any" min="0" class="form-control" name="cantidad_fin[]" required />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">% Descuento</label>
+            <input type="number" step="any" min="0" max="100" class="form-control" name="porcentaje_descuento[]" value="0" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-outline-primary mb-4" onclick="agregarDescuento()">+ Agregar</button>
+
+    <!-- SUBMIT -->
+    <div class="text-end">
+      <button type="submit" class="btn btn-success">✅ Guardar Material</button>
+    </div>
   </form>
+</div>
 
-  <h2>Presupuestos guardados</h2>
-  <div class="table-responsive">
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Material</th>
-          <th>Monto por cm2</th>
-          <th>Alto</th>
-          <th>Ancho</th>
-          <th>% Descuento</th>
-          <th>Monto Final</th>
-          {% if login %}
-          <th>Acciones</th>
-          {% endif %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for b in budgets %}
-          <tr>
-            <td>{{ b.material }}</td>
-            <td>{{ b.monto }}</td>
-            <td>{{ b.medida_alto }}</td>
-            <td>{{ b.medida_ancho }}</td>
-            <td>{{ b.descuento }}</td>
-            <td>{{ b.monto * b.medida_alto * b.medida_ancho * (1 - b.descuento / 100) }}</td>
-            {% if login %}
-            <td>
-              <a href="{{ url_for('edit_budget', budget_id=b.id) }}" class="btn btn-sm btn-warning">Editar</a>
-              <a href="{{ url_for('delete', budget_id=b.id) }}" class="btn btn-sm btn-danger">Eliminar</a>
-            </td>
-            {% endif %}
-          </tr>
-        {% else %}
-          <tr>
-            <td colspan="{% if login %}7{% else %}6{% endif %}" class="text-center">No hay presupuestos aún.</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<!-- ========================= BUSCADOR ========================= -->
+<form method="get" class="mb-4">
+  <div class="input-group">
+    <input type="text" class="form-control" name="busqueda" placeholder="Buscar material..." value="{{ request.args.get('busqueda', '') }}">
+    <button type="submit" class="btn btn-outline-primary">Buscar</button>
+    <a href="{{ url_for('admin_panel') }}" class="btn btn-outline-secondary">Limpiar</a>
   </div>
+</form>
 
-  <script>
-    function agregarMedida() {
-      const container = document.getElementById('medidas-container');
-      const group = document.querySelector('.medida-group');
-      const clone = group.cloneNode(true);
+<!-- ========================= VISUALIZACIÓN DE DATOS ========================= -->
+<h2 class="section-title">📄 Datos cargados</h2>
 
-      clone.querySelectorAll('input').forEach(input => {
-        if (input.name.includes('medida_alto')) {
-          input.value = '';
-        } else if (input.name.includes('medida_ancho')) {
-          input.value = '';
-        } else if (input.name.includes('descuento')) {
-          input.value = '0';
-        }
-      });
+<!-- Rangos de presupuesto -->
+<h4>📏 Rangos de Montos</h4>
+<div class="table-responsive mb-4">
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Material</th>
+        <th>Desde (cm²)</th>
+        <th>Hasta (cm²)</th>
+        <th>Monto</th>
+        {% if login %}<th>Acciones</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in presupuestos %}
+      <tr>
+        <td>{{ p.material.nombre }}</td>
+        <td>{{ p.medida_inicio }}</td>
+        <td>{{ p.medida_fin }}</td>
+        <td>{{ p.monto_entre_medidas }}</td>
+        {% if login %}
+        <td>
+          <a href="{{ url_for('delete_presupuesto', presupuesto_id=p.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este rango de presupuesto?');">Eliminar</a>
+          <a href="{{ url_for('edit_material', material_id=p.material.id) }}" class="btn btn-sm btn-warning">Editar</a>
+        </td>
+        {% endif %}
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="{% if login %}5{% else %}4{% endif %}" class="text-center">No hay rangos cargados.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
-      container.appendChild(clone);
-    }
-  </script>
+<!-- Descuentos -->
+<h4>💸 Descuentos por Cantidad</h4>
+<div class="table-responsive mb-4">
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Material</th>
+        <th>Monto por cm²</th>
+        <th>% Laminado</th>
+        <th>Desde</th>
+        <th>Hasta</th>
+        <th>% Descuento</th>
+        {% if login %}<th>Acciones</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in descuentos %}
+      <tr>
+        <td>{{ d.material.nombre }}</td>
+        <td>{{ d.material.monto_por_cm2 }}</td>
+        <td>{{ d.material.porcentaje_por_laminado }}</td>
+        <td>{{ d.cantidad_inicio }}</td>
+        <td>{{ d.cantidad_fin }}</td>
+        <td>{{ d.porcentaje_descuento_por_cantidad }}</td>
+        {% if login %}
+        <td>
+          <a href="{{ url_for('delete_descuento', descuento_id=d.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este descuento?');">Eliminar</a>
+          <a href="{{ url_for('edit_material', material_id=d.material.id) }}" class="btn btn-sm btn-warning">Editar</a>
+        </td>
+        {% endif %}
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="{% if login %}7{% else %}6{% endif %}" class="text-center">No hay descuentos aún.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ========================= JS ========================= -->
+<script>
+  function agregarPresupuesto() {
+    const container = document.getElementById("presupuestos-container");
+    const original = document.querySelector(".presupuesto-group");
+    const clone = original.cloneNode(true);
+
+    clone.querySelectorAll("input").forEach(input => input.value = "");
+    clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
+
+    container.appendChild(clone);
+  }
+
+  function agregarDescuento() {
+    const container = document.getElementById("descuentos-container");
+    const original = document.querySelector(".descuento-group");
+    const clone = original.cloneNode(true);
+
+    clone.querySelectorAll("input").forEach(input => {
+      input.value = input.name.includes("porcentaje_descuento") ? "0" : "";
+    });
+    clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
+
+    container.appendChild(clone);
+  }
+</script>
+
 {% endblock %}
