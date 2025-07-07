@@ -200,6 +200,42 @@
   </table>
 </div>
 
+<!-- ========================= EDITAR CREDENCIALES ========================= -->
+<div class="card-custom">
+  <h2 class="mb-4">🔑 Editar Credenciales</h2>
+
+  <form method="post" action="{{ url_for('edit_credenciales') }}" class="credenciales-form">
+    {% for cred in credenciales %}
+      <div class="mb-3">
+        <label for="usuario_{{ cred.id }}">Usuario</label>
+        <input
+          type="text"
+          class="form-control"
+          id="usuario_{{ cred.id }}"
+          name="usuario_{{ cred.id }}"
+          value="{{ cred.usuario }}"
+          readonly
+        >
+      </div>
+      <div class="mb-3">
+        <label for="contrasena_{{ cred.id }}">Contraseña</label>
+        <input
+          type="text"
+          class="form-control"
+          id="contrasena_{{ cred.id }}"
+          name="contrasena_{{ cred.id }}"
+          value="{{ cred.contrasena }}"
+          required
+        >
+      </div>
+      <hr>
+    {% endfor %}
+    <div class="text-end">
+      <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+    </div>
+  </form>
+</div>
+
 <!-- ========================= JS ========================= -->
 <script>
   function agregarPresupuesto() {

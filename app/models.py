@@ -35,3 +35,11 @@ class PresupuestoMedidas(db.Model):
     def __repr__(self):
         return (f'<PresupuestoMedidas {self.id} Material {self.material_id} '
                 f'{self.medida_inicio}-{self.medida_fin} monto {self.monto_entre_medidas}>')
+
+class Credenciales(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    usuario = db.Column(db.String(50), nullable=False, unique=True)
+    contrasena = db.Column(db.String(128), nullable=False)  # almacenar hash de la contraseña preferiblemente
+
+    def __repr__(self):
+        return f'<Credenciales {self.id} {self.usuario}>'
