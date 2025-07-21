@@ -12,7 +12,7 @@ def create_app():
 
     with app.app_context():
         from . import routes
-        from .models import Material, DescuentoMedidas, PresupuestoMedidas, Credenciales
+        from .models import Material, DescuentoCantidad, PresupuestoMedidas, Credenciales
         db.create_all()
 
     return app

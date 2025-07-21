@@ -5,13 +5,13 @@ class Material(db.Model):
     nombre = db.Column(db.String(50), nullable=False, unique=True)
     porcentaje_por_laminado = db.Column(db.Float, default=0)  # % adicional por laminado
 
-    descuentos_medidas = db.relationship('DescuentoMedidas', backref='material', lazy=True)
+    descuento_cantidad = db.relationship('DescuentoCantidad', backref='material', lazy=True)
     presupuestos_medidas = db.relationship('PresupuestoMedidas', backref='material', lazy=True)
 
     def __repr__(self):
         return f'<Material {self.id} {self.nombre}>'
 
-class DescuentoMedidas(db.Model):
+class DescuentoCantidad(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cantidad_inicio = db.Column(db.Float, nullable=False)
     cantidad_fin = db.Column(db.Float, nullable=False)
@@ -20,7 +20,7 @@ class DescuentoMedidas(db.Model):
     material_id = db.Column(db.Integer, db.ForeignKey('material.id'), nullable=False)
 
     def __repr__(self):
-        return (f'<DescuentoMedidas {self.id} {self.cantidad_inicio}-{self.cantidad_fin} '
+        return (f'<DescuentoCantidad {self.id} {self.cantidad_inicio}-{self.cantidad_fin} '
                 f'descuento {self.porcentaje_descuento_por_cantidad} %>')
 
 class PresupuestoMedidas(db.Model):

@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 from cryptography.fernet import Fernet
 from . import db
 import os
-from .models import Material, DescuentoMedidas, PresupuestoMedidas, Credenciales
+from .models import Material, DescuentoCantidad, PresupuestoMedidas, Credenciales
 from flask import current_app as app
 from dotenv import load_dotenv
 
@@ -91,14 +91,14 @@ def client_index():
             material = Material.query.get_or_404(material_id)
             area = ancho * alto
 
-            descuento_medidas = (
-                DescuentoMedidas.query
-                .filter(DescuentoMedidas.material_id == material.id)
-                .filter(DescuentoMedidas.cantidad_inicio <= cantidad, DescuentoMedidas.cantidad_fin >= cantidad)
-                .order_by(DescuentoMedidas.cantidad_inicio)
+            descuento_cantidad = (
+                DescuentoCantidad.query
+                .filter(DescuentoCantidad.material_id == material.id)
+                .filter(DescuentoCantidad.cantidad_inicio <= cantidad, DescuentoCantidad.cantidad_fin >= cantidad)
+                .order_by(DescuentoCantidad.cantidad_inicio)
                 .first()
             )
-            descuento_cantidad = descuento_medidas.porcentaje_descuento_por_cantidad if descuento_medidas else 0
+            descuento_cantidad = descuento_cantidad.porcentaje_descuento_por_cantidad if descuento_cantidad else 0
 
             presupuesto_medida = (
                 PresupuestoMedidas.query
@@ -169,7 +169,7 @@ def admin_panel():
         else:
             material.porcentaje_por_laminado = laminado
 
-        DescuentoMedidas.query.filter_by(material_id=material.id).delete()
+        DescuentoCantidad.query.filter_by(material_id=material.id).delete()
         PresupuestoMedidas.query.filter_by(material_id=material.id).delete()
 
         inicios = request.form.getlist("cantidad_inicio[]")
@@ -178,7 +178,7 @@ def admin_panel():
 
         for inicio, fin, desc in zip(inicios, fines, descuentos):
             if inicio and fin and desc:
-                d = DescuentoMedidas(
+                d = DescuentoCantidad(
                     cantidad_inicio=float(inicio),
                     cantidad_fin=float(fin),
                     porcentaje_descuento_por_cantidad=float(desc),
@@ -206,7 +206,7 @@ def admin_panel():
     filtro = request.args.get("busqueda", "")
     if filtro:
         descuentos = (
-            DescuentoMedidas.query.join(Material)
+            DescuentoCantidad.query.join(Material)
             .filter(Material.nombre.ilike(f"%{filtro}%"))
             .order_by(Material.nombre.asc())
             .all()
@@ -219,7 +219,7 @@ def admin_panel():
         )
     else:
         descuentos = (
-            DescuentoMedidas.query.join(Material)
+            DescuentoCantidad.query.join(Material)
             .order_by(Material.nombre.asc())
             .all()
         )
@@ -251,7 +251,7 @@ def admin_panel():
 @app.route("/delete_descuento/<int:descuento_id>")
 @login_required('admin')
 def delete_descuento(descuento_id):
-    descuento = DescuentoMedidas.query.get_or_404(descuento_id)
+    descuento = DescuentoCantidad.query.get_or_404(descuento_id)
     db.session.delete(descuento)
     db.session.commit()
     return redirect(url_for("admin_panel"))
@@ -290,14 +290,14 @@ def edit_material(material_id):
                 )
                 db.session.add(rango)
 
-        DescuentoMedidas.query.filter_by(material_id=material.id).delete()
+        DescuentoCantidad.query.filter_by(material_id=material.id).delete()
         cantidad_inicio_list = request.form.getlist('cantidad_inicio[]')
         cantidad_fin_list = request.form.getlist('cantidad_fin[]')
         porcentaje_descuento_list = request.form.getlist('porcentaje_descuento[]')
 
         for c_inicio, c_fin, p_desc in zip(cantidad_inicio_list, cantidad_fin_list, porcentaje_descuento_list):
             if c_inicio and c_fin and p_desc:
-                descuento = DescuentoMedidas(
+                descuento = DescuentoCantidad(
                     material_id=material.id,
                     cantidad_inicio=float(c_inicio),
                     cantidad_fin=float(c_fin),
@@ -313,7 +313,7 @@ def edit_material(material_id):
         return redirect(url_for('admin_panel'))
 
     presupuestos = PresupuestoMedidas.query.filter_by(material_id=material.id).all()
-    descuentos = DescuentoMedidas.query.filter_by(material_id=material.id).all()
+    descuentos = DescuentoCantidad.query.filter_by(material_id=material.id).all()
 
     return render_template('edit_material.html',
                            material=material,
@@ -335,7 +335,6 @@ def edit_credenciales():
     return redirect(url_for('admin_panel'))
 
 @app.route('/create_credencial', methods=['GET', 'POST'])
-@login_required('admin')
 def create_credencial():
     if request.method == 'POST':
         if request.is_json:

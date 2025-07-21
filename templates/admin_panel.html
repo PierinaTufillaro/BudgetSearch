@@ -129,7 +129,7 @@
         <th>Material</th>
         <th>Desde (cm²)</th>
         <th>Hasta (cm²)</th>
-        <th>Monto</th>
+        <th>Monto (cm²)</th>
         {% if login %}<th>Acciones</th>{% endif %}
       </tr>
     </thead>
@@ -163,12 +163,10 @@
     <thead>
       <tr>
         <th>Material</th>
-        <th>Monto por cm²</th>
         <th>% Laminado</th>
         <th>Desde</th>
         <th>Hasta</th>
         <th>% Descuento</th>
-        {% if login %}<th>Acciones</th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -179,12 +177,6 @@
         <td>{{ d.cantidad_inicio }}</td>
         <td>{{ d.cantidad_fin }}</td>
         <td>{{ d.porcentaje_descuento_por_cantidad }}</td>
-        {% if login %}
-        <td>
-          <a href="{{ url_for('delete_descuento', descuento_id=d.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este descuento?');">Eliminar</a>
-          <a href="{{ url_for('edit_material', material_id=d.material.id) }}" class="btn btn-sm btn-warning">Editar</a>
-        </td>
-        {% endif %}
       </tr>
       {% else %}
       <tr>
