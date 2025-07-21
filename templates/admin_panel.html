@@ -47,12 +47,8 @@
       <input type="text" class="form-control" id="material" name="material" required />
     </div>
 
-    <!-- MONTO Y LAMINADO -->
+    <!-- LAMINADO -->
     <div class="row mb-3">
-      <div class="col-md-6">
-        <label for="monto" class="form-label">Monto por cm²</label>
-        <input type="number" step="any" min="0" class="form-control" id="monto" name="monto" required />
-      </div>
       <div class="col-md-6">
         <label for="laminado" class="form-label">% por laminado</label>
         <input type="number" step="any" min="0" max="100" class="form-control" id="laminado" name="laminado" value="0" />
@@ -179,7 +175,6 @@
       {% for d in descuentos %}
       <tr>
         <td>{{ d.material.nombre }}</td>
-        <td>{{ d.material.monto_por_cm2 }}</td>
         <td>{{ d.material.porcentaje_por_laminado }}</td>
         <td>{{ d.cantidad_inicio }}</td>
         <td>{{ d.cantidad_fin }}</td>
@@ -219,13 +214,13 @@
       </div>
       <div class="mb-3">
         <label for="contrasena_{{ cred.id }}">Contraseña</label>
-        <input
-          type="text"
-          class="form-control"
-          id="contrasena_{{ cred.id }}"
-          name="contrasena_{{ cred.id }}"
-          value="{{ cred.contrasena }}"
-          required
+        <input 
+        type="text" 
+        class="form-control"
+        id="contrasena_{{ cred.id }}"
+        name="contrasena_{{ cred.id }}" 
+        value="{{ cred.plain_password }}"
+        required
         >
       </div>
       <hr>

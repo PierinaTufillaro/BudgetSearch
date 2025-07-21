@@ -3,7 +3,6 @@ from . import db
 class Material(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(50), nullable=False, unique=True)
-    monto_por_cm2 = db.Column(db.Float, nullable=False)  # Precio base por cm²
     porcentaje_por_laminado = db.Column(db.Float, default=0)  # % adicional por laminado
 
     descuentos_medidas = db.relationship('DescuentoMedidas', backref='material', lazy=True)

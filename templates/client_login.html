@@ -3,8 +3,8 @@
 {% block content %}
   <form method="post" novalidate style="max-width: 400px;">
     <div class="mb-3">
-      <label for="password" class="form-label">Contraseña</label>
-      <input type="password" name="password" id="password" class="form-control" required autofocus>
+      <label for="contrasena" class="form-label">Contraseña</label>
+      <input type="password" name="contrasena" id="contrasena" class="form-control" required autofocus>
       {% if error %}
       <div class="text-danger mt-1" style="font-size: 0.9rem;">{{ error }}</div>
       {% endif %}

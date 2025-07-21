@@ -1,16 +1,20 @@
 from flask import render_template, request, redirect, url_for, session, flash
 from datetime import timedelta, datetime
-from werkzeug.security import check_password_hash  # si usas hashing
+from cryptography.fernet import Fernet
 from . import db
 import os
 from .models import Material, DescuentoMedidas, PresupuestoMedidas, Credenciales
 from flask import current_app as app
 from dotenv import load_dotenv
 
+load_dotenv()
 
 # Configuramos tiempo de sesión (1 hora)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 app.permanent_session_lifetime = timedelta(hours=1)
+
+# Setup Fernet for reversible encryption
+fernet = Fernet(os.getenv("ENCRYPTION_KEY").encode())
 
 # -- Helpers para sesión --
 def login_required(role):
@@ -21,12 +25,10 @@ def login_required(role):
             if 'user_type' not in session:
                 return redirect(url_for('client_login'))
             if session.get('user_type') != role:
-                # Redirigir según rol
                 if session.get('user_type') == 'admin':
                     return redirect(url_for('admin_panel'))
                 else:
                     return redirect(url_for('client_index'))
-            # Check expiracion
             if 'login_time' in session:
                 now = datetime.utcnow()
                 login_time = session['login_time']
@@ -49,20 +51,25 @@ def login_required(role):
         return wrapped
     return decorator
 
-
 @app.route("/", methods=["GET", "POST"])
 def client_login():
+    """
+    Maneja el login del cliente solo con contraseña.
+
+    - En POST verifica la contraseña contra el usuario 'cliente' en la base.
+    - Si es correcta, inicia sesión y muestra la página principal de cliente.
+    - Si es incorrecta, vuelve a mostrar el login con error.
+    - En GET simplemente muestra el formulario de login.
+    """
     if request.method == "POST":
-        clave = request.form.get("password", "").strip()
-        # Buscar usuario cliente en Credenciales con usuario='cliente'
-        cred = Credenciales.query.filter_by(usuario="cliente").first()
-        if check_password_hash(cred.contrasena, clave):
-            # Si usas hashing de contraseña, check con check_password_hash
-                session.permanent = True
-                session['user_type'] = 'client'
-                session['login_time'] = datetime.utcnow().isoformat()
-                materiales = Material.query.all()
-                return render_template("client_index.html", materiales=materiales)
+        clave = request.form.get("contrasena", "").strip()
+        cred = Credenciales.query.filter_by(usuario="client").first()
+        if cred and fernet.decrypt(cred.contrasena.encode()).decode() == clave:
+            session.permanent = True
+            session['user_type'] = 'client'
+            session['login_time'] = datetime.utcnow().isoformat()
+            materiales = Material.query.all()
+            return render_template("client_index.html", materiales=materiales)
         return render_template("client_login.html", error="Contraseña incorrecta")
     return render_template("client_login.html")
 
@@ -100,10 +107,7 @@ def client_index():
                 .first()
             )
 
-            if presupuesto_medida:
-                base_unitario = presupuesto_medida.monto_entre_medidas
-            else:
-                base_unitario = material.monto_por_cm2 * area
+            base_unitario = presupuesto_medida.monto_entre_medidas
 
             if laminado:
                 base_unitario *= (1 + material.porcentaje_por_laminado / 100)
@@ -117,8 +121,8 @@ def client_index():
                 "area": area,
                 "descuento_cantidad": descuento_cantidad,
                 "laminado": laminado,
-                "precio_unitario": round(base_unitario, 2),
-                "precio_total": round(precio_total, 2)
+                "precio_unitario": round(base_unitario, 5),
+                "precio_total": round(precio_total, 5)
             }
 
         except Exception as e:
@@ -132,11 +136,8 @@ def admin_login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
-
-        # Buscamos en la base de datos por nombre de usuario
         cred = Credenciales.query.filter_by(usuario=username).first()
-
-        if cred and check_password_hash(cred.contrasena, password):
+        if cred and fernet.decrypt(cred.contrasena.encode()).decode() == password:
             session.permanent = True
             session['user_type'] = 'admin'
             session['login_time'] = datetime.utcnow().isoformat()
@@ -156,20 +157,16 @@ def logout():
 @app.route("/admin_panel", methods=["GET", "POST"])
 @login_required('admin')
 def admin_panel():
-    # El resto de tu código actual para admin_panel queda igual,
-    # ya que esta ruta solo se puede acceder si está logueado admin
     if request.method == "POST":
         material_nombre = request.form["material"]
-        monto = float(request.form["monto"])
         laminado = float(request.form["laminado"])
 
         material = Material.query.filter_by(nombre=material_nombre).first()
         if not material:
-            material = Material(nombre=material_nombre, monto_por_cm2=monto, porcentaje_por_laminado=laminado)
+            material = Material(nombre=material_nombre, porcentaje_por_laminado=laminado)
             db.session.add(material)
             db.session.flush()
         else:
-            material.monto_por_cm2 = monto
             material.porcentaje_por_laminado = laminado
 
         DescuentoMedidas.query.filter_by(material_id=material.id).delete()
@@ -234,6 +231,11 @@ def admin_panel():
 
     materiales = Material.query.order_by(Material.nombre.asc()).all()
     credenciales = Credenciales.query.all()
+    for cred in credenciales:
+        try:
+            cred.plain_password = fernet.decrypt(cred.contrasena.encode()).decode()
+        except Exception:
+            cred.plain_password = "ERROR"
 
     return render_template(
         "admin_panel.html",
@@ -241,10 +243,11 @@ def admin_panel():
         materiales=materiales,
         descuentos=descuentos,
         presupuestos=presupuestos,
-        credenciales=credenciales
+        credenciales=credenciales,
+        fernet=fernet
     )
-
-
+    
+    
 @app.route("/delete_descuento/<int:descuento_id>")
 @login_required('admin')
 def delete_descuento(descuento_id):
@@ -270,7 +273,6 @@ def edit_material(material_id):
 
     if request.method == 'POST':
         material.nombre = request.form.get('material', '').strip()
-        material.monto_por_cm2 = float(request.form.get('monto', 0))
         material.porcentaje_por_laminado = float(request.form.get('laminado', 0))
 
         PresupuestoMedidas.query.filter_by(material_id=material.id).delete()
@@ -317,22 +319,48 @@ def edit_material(material_id):
                            material=material,
                            presupuestos=presupuestos,
                            descuentos=descuentos)
-
+    
 @app.route('/edit_credenciales', methods=['POST'])
+@login_required('admin')
 def edit_credenciales():
     credenciales = Credenciales.query.all()
     for cred in credenciales:
         nueva_contrasena = request.form.get(f'contrasena_{cred.id}')
-        print(f'Usuario: {cred.usuario}, nueva contrasena: {nueva_contrasena}')
         if nueva_contrasena:
-            cred.contrasena = nueva_contrasena
+            cred.contrasena = fernet.encrypt(nueva_contrasena.encode()).decode()
     try:
         db.session.commit()
-        print("Credenciales actualizadas correctamente.", "success")
-        credenciales_actualizadas = Credenciales.query.all()
-        for c in credenciales_actualizadas:
-            print(f"Usuario: {c.usuario}, contraseña: {c.contrasena}")
     except Exception as e:
         db.session.rollback()
-        print(f"Error al guardar: {str(e)}", "danger")
-    return redirect(url_for('client_index'))
+    return redirect(url_for('admin_panel'))
+
+@app.route('/create_credencial', methods=['GET', 'POST'])
+@login_required('admin')
+def create_credencial():
+    if request.method == 'POST':
+        if request.is_json:
+            data = request.get_json()
+            usuario = data.get('usuario', '').strip()
+            contrasena_plana = data.get('contrasena', '').strip()
+        else:
+            usuario = request.form.get('usuario', '').strip()
+            contrasena_plana = request.form.get('contrasena', '').strip()
+
+        if not usuario or not contrasena_plana:
+            flash('Usuario y contraseña son requeridos.', 'danger')
+            return redirect(url_for('create_credencial'))
+
+        existente = Credenciales.query.filter_by(usuario=usuario).first()
+        if existente:
+            flash('El usuario ya existe.', 'warning')
+            return redirect(url_for('create_credencial'))
+
+        contrasena_encriptada = fernet.encrypt(contrasena_plana.encode()).decode()
+
+        nueva_cred = Credenciales(usuario=usuario, contrasena=contrasena_encriptada)
+        db.session.add(nueva_cred)
+        db.session.commit()
+        flash('Credencial creada correctamente.', 'success')
+        return redirect(url_for('admin_panel'))
+
+    return render_template('create_credencial.html')
