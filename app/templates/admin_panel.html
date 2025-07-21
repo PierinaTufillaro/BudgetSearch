@@ -113,7 +113,7 @@
   <div class="input-group">
     <input type="text" class="form-control" name="busqueda" placeholder="Buscar material..." value="{{ request.args.get('busqueda', '') }}">
     <button type="submit" class="btn btn-outline-primary">Buscar</button>
-    <a href="{{ url_for('admin_panel') }}" class="btn btn-outline-secondary">Limpiar</a>
+    <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-outline-secondary">Limpiar</a>
   </div>
 </form>
 
@@ -142,8 +142,8 @@
         <td>{{ p.monto_entre_medidas }}</td>
         {% if login %}
         <td>
-          <a href="{{ url_for('delete_presupuesto', presupuesto_id=p.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este rango de presupuesto?');">Eliminar</a>
-          <a href="{{ url_for('edit_material', material_id=p.material.id) }}" class="btn btn-sm btn-warning">Editar</a>
+          <a href="{{ url_for('admin.delete_presupuesto', presupuesto_id=p.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este rango de presupuesto?');">Eliminar</a>
+          <a href="{{ url_for('admin.edit_material', material_id=p.material.id) }}" class="btn btn-sm btn-warning">Editar</a>
         </td>
         {% endif %}
       </tr>
@@ -191,7 +191,7 @@
 <div class="card-custom">
   <h2 class="mb-4">🔑 Editar Credenciales</h2>
 
-  <form method="post" action="{{ url_for('edit_credenciales') }}" class="credenciales-form">
+  <form method="post" action="{{ url_for('admin.edit_credenciales') }}" class="credenciales-form">
     {% for cred in credenciales %}
       <div class="mb-3">
         <label for="usuario_{{ cred.id }}">Usuario</label>

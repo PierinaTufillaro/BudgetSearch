@@ -13,7 +13,7 @@
       <div class="text-danger mt-1" style="font-size: 0.9rem;">{{ error }}</div>
       {% endif %}
     </div>
-    <a href="{{ url_for('client_login') }}" class="btn btn-outline-secondary">Atrás</a>
+    <a href="{{ url_for('auth.client_login') }}" class="btn btn-outline-secondary">Atrás</a>
     <button type="submit" class="btn btn-primary">Entrar</button>
   </form>
 {% endblock %}

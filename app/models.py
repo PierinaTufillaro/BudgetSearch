@@ -1,44 +1,44 @@
-from . import db
+# from . import db
 
-class Material(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(50), nullable=False, unique=True)
-    porcentaje_por_laminado = db.Column(db.Float, default=0)  # % adicional por laminado
+# class Material(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     nombre = db.Column(db.String(50), nullable=False, unique=True)
+#     porcentaje_por_laminado = db.Column(db.Float, default=0)  # % adicional por laminado
 
-    descuento_cantidad = db.relationship('DescuentoCantidad', backref='material', lazy=True)
-    presupuestos_medidas = db.relationship('PresupuestoMedidas', backref='material', lazy=True)
+#     descuento_cantidad = db.relationship('DescuentoCantidad', backref='material', lazy=True)
+#     presupuestos_medidas = db.relationship('PresupuestoMedidas', backref='material', lazy=True)
 
-    def __repr__(self):
-        return f'<Material {self.id} {self.nombre}>'
+#     def __repr__(self):
+#         return f'<Material {self.id} {self.nombre}>'
 
-class DescuentoCantidad(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    cantidad_inicio = db.Column(db.Float, nullable=False)
-    cantidad_fin = db.Column(db.Float, nullable=False)
-    porcentaje_descuento_por_cantidad = db.Column(db.Float, nullable=False)
+# class DescuentoCantidad(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     cantidad_inicio = db.Column(db.Float, nullable=False)
+#     cantidad_fin = db.Column(db.Float, nullable=False)
+#     porcentaje_descuento_por_cantidad = db.Column(db.Float, nullable=False)
 
-    material_id = db.Column(db.Integer, db.ForeignKey('material.id'), nullable=False)
+#     material_id = db.Column(db.Integer, db.ForeignKey('material.id'), nullable=False)
 
-    def __repr__(self):
-        return (f'<DescuentoCantidad {self.id} {self.cantidad_inicio}-{self.cantidad_fin} '
-                f'descuento {self.porcentaje_descuento_por_cantidad} %>')
+#     def __repr__(self):
+#         return (f'<DescuentoCantidad {self.id} {self.cantidad_inicio}-{self.cantidad_fin} '
+#                 f'descuento {self.porcentaje_descuento_por_cantidad} %>')
 
-class PresupuestoMedidas(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    medida_inicio = db.Column(db.Float, nullable=False)
-    medida_fin = db.Column(db.Float, nullable=False)
-    monto_entre_medidas = db.Column(db.Float, nullable=False)
+# class PresupuestoMedidas(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     medida_inicio = db.Column(db.Float, nullable=False)
+#     medida_fin = db.Column(db.Float, nullable=False)
+#     monto_entre_medidas = db.Column(db.Float, nullable=False)
 
-    material_id = db.Column(db.Integer, db.ForeignKey('material.id'), nullable=False)
+#     material_id = db.Column(db.Integer, db.ForeignKey('material.id'), nullable=False)
 
-    def __repr__(self):
-        return (f'<PresupuestoMedidas {self.id} Material {self.material_id} '
-                f'{self.medida_inicio}-{self.medida_fin} monto {self.monto_entre_medidas}>')
+#     def __repr__(self):
+#         return (f'<PresupuestoMedidas {self.id} Material {self.material_id} '
+#                 f'{self.medida_inicio}-{self.medida_fin} monto {self.monto_entre_medidas}>')
 
-class Credenciales(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    usuario = db.Column(db.String(50), nullable=False, unique=True)
-    contrasena = db.Column(db.String(128), nullable=False)  # almacenar hash de la contraseña preferiblemente
+# class Credenciales(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     usuario = db.Column(db.String(50), nullable=False, unique=True)
+#     contrasena = db.Column(db.String(128), nullable=False)  # almacenar hash de la contraseña preferiblemente
 
-    def __repr__(self):
-        return f'<Credenciales {self.id} {self.usuario}>'
+#     def __repr__(self):
+#         return f'<Credenciales {self.id} {self.usuario}>'

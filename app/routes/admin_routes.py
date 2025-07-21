@@ -1,162 +1,17 @@
-from flask import render_template, request, redirect, url_for, session, flash
-from datetime import timedelta, datetime
-from cryptography.fernet import Fernet
-from . import db
-import os
-from .models import Material, DescuentoCantidad, PresupuestoMedidas, Credenciales
-from flask import current_app as app
-from dotenv import load_dotenv
+"""Rutas para administración."""
 
-load_dotenv()
+from flask import Blueprint, request, render_template, redirect, url_for, flash
+from app.models import Material, DescuentoCantidad, PresupuestoMedidas, Credenciales
+from ..helpers import login_required, fernet
+from .. import db
 
-# Configuramos tiempo de sesión (1 hora)
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
-app.permanent_session_lifetime = timedelta(hours=1)
-
-# Setup Fernet for reversible encryption
-fernet = Fernet(os.getenv("ENCRYPTION_KEY").encode())
-
-# -- Helpers para sesión --
-def login_required(role):
-    def decorator(f):
-        from functools import wraps
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-            if 'user_type' not in session:
-                return redirect(url_for('client_login'))
-            if session.get('user_type') != role:
-                if session.get('user_type') == 'admin':
-                    return redirect(url_for('admin_panel'))
-                else:
-                    return redirect(url_for('client_index'))
-            if 'login_time' in session:
-                now = datetime.utcnow()
-                login_time = session['login_time']
-                if isinstance(login_time, str):
-                    login_time = datetime.fromisoformat(login_time)
-                if now - login_time > app.permanent_session_lifetime:
-                    session.clear()
-                    flash('Sesión expirada, por favor logueate de nuevo.')
-                    if role == 'admin':
-                        return redirect(url_for('admin_login'))
-                    else:
-                        return redirect(url_for('client_login'))
-            else:
-                session.clear()
-                if role == 'admin':
-                    return redirect(url_for('admin_login'))
-                else:
-                    return redirect(url_for('client_login'))
-            return f(*args, **kwargs)
-        return wrapped
-    return decorator
-
-@app.route("/", methods=["GET", "POST"])
-def client_login():
-    """
-    Maneja el login del cliente solo con contraseña.
-
-    - En POST verifica la contraseña contra el usuario 'cliente' en la base.
-    - Si es correcta, inicia sesión y muestra la página principal de cliente.
-    - Si es incorrecta, vuelve a mostrar el login con error.
-    - En GET simplemente muestra el formulario de login.
-    """
-    if request.method == "POST":
-        clave = request.form.get("contrasena", "").strip()
-        cred = Credenciales.query.filter_by(usuario="client").first()
-        if cred and fernet.decrypt(cred.contrasena.encode()).decode() == clave:
-            session.permanent = True
-            session['user_type'] = 'client'
-            session['login_time'] = datetime.utcnow().isoformat()
-            materiales = Material.query.all()
-            return render_template("client_index.html", materiales=materiales)
-        return render_template("client_login.html", error="Contraseña incorrecta")
-    return render_template("client_login.html")
+admin_routes = Blueprint('admin', __name__)
 
 
-@app.route("/client_index", methods=["GET", "POST"])
-@login_required('client')
-def client_index():
-    materiales = Material.query.all()
-    resultado = None
-
-    if request.method == "POST":
-        try:
-            ancho = float(request.form["ancho"])
-            alto = float(request.form["alto"])
-            cantidad = int(request.form["cantidad"])
-            material_id = int(request.form["material"])
-            laminado = request.form.get("laminado") == "on"
-
-            material = Material.query.get_or_404(material_id)
-            area = ancho * alto
-
-            descuento_cantidad = (
-                DescuentoCantidad.query
-                .filter(DescuentoCantidad.material_id == material.id)
-                .filter(DescuentoCantidad.cantidad_inicio <= cantidad, DescuentoCantidad.cantidad_fin >= cantidad)
-                .order_by(DescuentoCantidad.cantidad_inicio)
-                .first()
-            )
-            descuento_cantidad = descuento_cantidad.porcentaje_descuento_por_cantidad if descuento_cantidad else 0
-
-            presupuesto_medida = (
-                PresupuestoMedidas.query
-                .filter(PresupuestoMedidas.material_id == material.id)
-                .filter(PresupuestoMedidas.medida_inicio <= area, PresupuestoMedidas.medida_fin >= area)
-                .first()
-            )
-
-            base_unitario = presupuesto_medida.monto_entre_medidas
-
-            if laminado:
-                base_unitario *= (1 + material.porcentaje_por_laminado / 100)
-
-            base_unitario *= (1 - descuento_cantidad / 100)
-
-            precio_total = base_unitario * cantidad
-
-            resultado = {
-                "material": material.nombre,
-                "area": area,
-                "descuento_cantidad": descuento_cantidad,
-                "laminado": laminado,
-                "precio_unitario": round(base_unitario, 5),
-                "precio_total": round(precio_total, 5)
-            }
-
-        except Exception as e:
-            resultado = {"error": f"Ocurrió un error: {str(e)}"}
-
-    return render_template("client_index.html", materiales=materiales, resultado=resultado)
-
-
-@app.route("/admin_login", methods=["GET", "POST"])
-def admin_login():
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
-        cred = Credenciales.query.filter_by(usuario=username).first()
-        if cred and fernet.decrypt(cred.contrasena.encode()).decode() == password:
-            session.permanent = True
-            session['user_type'] = 'admin'
-            session['login_time'] = datetime.utcnow().isoformat()
-            return redirect(url_for("admin_panel"))
-        else:
-            return render_template("admin_login.html", error="Usuario o contraseña incorrectos")
-
-    return render_template("admin_login.html")
-
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("client_login"))
-
-
-@app.route("/admin_panel", methods=["GET", "POST"])
+@admin_routes.route("/admin_panel", methods=["GET", "POST"])
 @login_required('admin')
 def admin_panel():
+    """Panel principal del administrador con ABMs de materiales y credenciales."""
     if request.method == "POST":
         material_nombre = request.form["material"]
         laminado = float(request.form["laminado"])
@@ -201,7 +56,7 @@ def admin_panel():
                 db.session.add(p)
 
         db.session.commit()
-        return redirect(url_for("admin_panel"))
+        return redirect(url_for("admin.admin_panel"))
 
     filtro = request.args.get("busqueda", "")
     if filtro:
@@ -247,26 +102,23 @@ def admin_panel():
         fernet=fernet
     )
     
-    
-@app.route("/delete_descuento/<int:descuento_id>")
+@admin_routes.route("/delete_descuento/<int:descuento_id>")
 @login_required('admin')
 def delete_descuento(descuento_id):
     descuento = DescuentoCantidad.query.get_or_404(descuento_id)
     db.session.delete(descuento)
     db.session.commit()
-    return redirect(url_for("admin_panel"))
+    return redirect(url_for("admin.admin_panel"))
 
-
-@app.route("/delete_presupuesto/<int:presupuesto_id>")
+@admin_routes.route("/delete_presupuesto/<int:presupuesto_id>")
 @login_required('admin')
 def delete_presupuesto(presupuesto_id):
     presupuesto = PresupuestoMedidas.query.get_or_404(presupuesto_id)
     db.session.delete(presupuesto)
     db.session.commit()
-    return redirect(url_for("admin_panel"))
+    return redirect(url_for("admin.admin_panel"))
 
-
-@app.route('/edit_material/<int:material_id>', methods=['GET', 'POST'])
+@admin_routes.route('/edit_material/<int:material_id>', methods=['GET', 'POST'])
 @login_required('admin')
 def edit_material(material_id):
     material = Material.query.get_or_404(material_id)
@@ -310,7 +162,7 @@ def edit_material(material_id):
         except Exception as e:
             db.session.rollback()
 
-        return redirect(url_for('admin_panel'))
+        return redirect(url_for('admin.admin_panel'))
 
     presupuestos = PresupuestoMedidas.query.filter_by(material_id=material.id).all()
     descuentos = DescuentoCantidad.query.filter_by(material_id=material.id).all()
@@ -320,7 +172,7 @@ def edit_material(material_id):
                            presupuestos=presupuestos,
                            descuentos=descuentos)
     
-@app.route('/edit_credenciales', methods=['POST'])
+@admin_routes.route('/edit_credenciales', methods=['POST'])
 @login_required('admin')
 def edit_credenciales():
     credenciales = Credenciales.query.all()
@@ -332,9 +184,9 @@ def edit_credenciales():
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-    return redirect(url_for('admin_panel'))
+    return redirect(url_for('admin.admin_panel'))
 
-@app.route('/create_credencial', methods=['GET', 'POST'])
+@admin_routes.route('/create_credencial', methods=['GET', 'POST'])
 def create_credencial():
     if request.method == 'POST':
         if request.is_json:
@@ -360,6 +212,6 @@ def create_credencial():
         db.session.add(nueva_cred)
         db.session.commit()
         flash('Credencial creada correctamente.', 'success')
-        return redirect(url_for('admin_panel'))
+        return redirect(url_for('admin.admin_panel'))
 
     return render_template('create_credencial.html')
