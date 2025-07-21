@@ -3,3 +3,6 @@
 /instance
 app/__pycache__
 .env
+/models/__pycache__
+/templates/__pycache__
+/routes/__pycache__
