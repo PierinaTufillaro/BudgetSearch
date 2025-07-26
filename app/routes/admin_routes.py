@@ -2,8 +2,9 @@
 
 from flask import Blueprint, request, render_template, redirect, url_for, flash
 from app.models import Material, DescuentoCantidad, PresupuestoMedidas, Credenciales
-from ..helpers import login_required, fernet
+from ..helpers import login_required
 from .. import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 admin_routes = Blueprint('admin', __name__)
 
@@ -86,11 +87,6 @@ def admin_panel():
 
     materiales = Material.query.order_by(Material.nombre.asc()).all()
     credenciales = Credenciales.query.all()
-    for cred in credenciales:
-        try:
-            cred.plain_password = fernet.decrypt(cred.contrasena.encode()).decode()
-        except Exception:
-            cred.plain_password = "ERROR"
 
     return render_template(
         "admin_panel.html",
@@ -99,9 +95,8 @@ def admin_panel():
         descuentos=descuentos,
         presupuestos=presupuestos,
         credenciales=credenciales,
-        fernet=fernet
     )
-    
+
 @admin_routes.route("/delete_descuento/<int:descuento_id>")
 @login_required('admin')
 def delete_descuento(descuento_id):
@@ -171,20 +166,58 @@ def edit_material(material_id):
                            material=material,
                            presupuestos=presupuestos,
                            descuentos=descuentos)
-    
-@admin_routes.route('/edit_credenciales', methods=['POST'])
+
+@admin_routes.route('/edit_credenciales', methods=['GET', 'POST'])
 @login_required('admin')
 def edit_credenciales():
+    if request.method == 'GET':
+        credenciales = Credenciales.query.all()
+        return render_template('admin_panel.html', credenciales=credenciales)
+
     credenciales = Credenciales.query.all()
+    cambios_realizados = False
+
     for cred in credenciales:
-        nueva_contrasena = request.form.get(f'contrasena_{cred.id}')
-        if nueva_contrasena:
-            cred.contrasena = fernet.encrypt(nueva_contrasena.encode()).decode()
+        nuevo_usuario = request.form.get(f'usuario_{cred.id}', '').strip()
+        actual = request.form.get(f'contrasena_actual_{cred.id}', '').strip()
+        nueva = request.form.get(f'contrasena_nueva_{cred.id}', '').strip()
+
+        # Validar cambio de usuario
+        if nuevo_usuario and nuevo_usuario != cred.usuario:
+            # Opcional: asegurarse de que no exista otro usuario igual
+            existente = Credenciales.query.filter_by(usuario=nuevo_usuario).first()
+            if existente and existente.id != cred.id:
+                flash(f'❌ El usuario "{nuevo_usuario}" ya está en uso.', 'danger')
+                return redirect(url_for('admin.admin_panel'))
+
+            cred.usuario = nuevo_usuario
+            cambios_realizados = True
+
+        # Validar cambio de contraseña
+        if actual and nueva:
+            if check_password_hash(cred.contrasena, actual):
+                cred.contrasena = generate_password_hash(nueva)
+                cambios_realizados = True
+            else:
+                flash(f'❌ Contraseña actual incorrecta para el usuario "{cred.usuario}". No se actualizó.', 'danger')
+                return redirect(url_for('admin.admin_panel'))
+
+        elif actual or nueva:
+            flash(f'⚠️ Debes completar ambos campos de contraseña para cambiar la credencial de "{cred.usuario}".', 'warning')
+            return redirect(url_for('admin.admin_panel'))
+
     try:
-        db.session.commit()
+        if cambios_realizados:
+            db.session.commit()
+            flash('✅ Credenciales actualizadas correctamente.', 'success')
+        else:
+            flash('ℹ️ No se realizaron cambios.', 'info')
     except Exception as e:
         db.session.rollback()
+        flash('❌ Ocurrió un error al guardar los cambios.', 'danger')
+
     return redirect(url_for('admin.admin_panel'))
+
 
 @admin_routes.route('/create_credencial', methods=['GET', 'POST'])
 def create_credencial():
@@ -206,7 +239,7 @@ def create_credencial():
             flash('El usuario ya existe.', 'warning')
             return redirect(url_for('create_credencial'))
 
-        contrasena_encriptada = fernet.encrypt(contrasena_plana.encode()).decode()
+        contrasena_encriptada = generate_password_hash(contrasena_plana)
 
         nueva_cred = Credenciales(usuario=usuario, contrasena=contrasena_encriptada)
         db.session.add(nueva_cred)

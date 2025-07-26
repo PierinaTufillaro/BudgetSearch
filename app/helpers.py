@@ -2,11 +2,9 @@
 
 from flask import session, redirect, url_for, flash, current_app as app
 from functools import wraps
-from cryptography.fernet import Fernet
 from datetime import datetime
 import os
 
-fernet = Fernet(os.getenv("ENCRYPTION_KEY").encode())
 
 def login_required(role):
     """Protege rutas según el rol de usuario y controla expiración de sesión."""

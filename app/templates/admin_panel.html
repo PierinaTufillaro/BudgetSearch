@@ -1,5 +1,4 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "base.html" %} {% block content %}
 
 <style>
   .card-custom {
@@ -37,6 +36,36 @@
 </style>
 
 <!-- ========================= FORMULARIO PARA CARGA NUEVA ========================= -->
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
+<div class="flash-container">
+  {% for category, message in messages %}
+  <div
+    class="alert alert-{{ category }} alert-dismissible fade show"
+    role="alert"
+  >
+    {{ message }}
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  setTimeout(function () {
+    const alerts = document.querySelectorAll(".alert");
+    alerts.forEach((alert) => {
+      alert.classList.remove("show");
+      alert.classList.add("fade");
+      setTimeout(() => alert.remove(), 300);
+    });
+  }, 3000); // Cierra en 3 segundos
+</script>
+{% endif %} {% endwith %}
 <div class="card-custom">
   <h2 class="mb-4">🧾 Agregar nuevo material</h2>
 
@@ -44,14 +73,29 @@
     <!-- MATERIAL -->
     <div class="mb-3">
       <label for="material" class="form-label">Nombre del material</label>
-      <input type="text" class="form-control" id="material" name="material" required />
+      <input
+        type="text"
+        class="form-control"
+        id="material"
+        name="material"
+        required
+      />
     </div>
 
     <!-- LAMINADO -->
     <div class="row mb-3">
       <div class="col-md-6">
         <label for="laminado" class="form-label">% por laminado</label>
-        <input type="number" step="any" min="0" max="100" class="form-control" id="laminado" name="laminado" value="0" />
+        <input
+          type="number"
+          step="any"
+          min="0"
+          max="100"
+          class="form-control"
+          id="laminado"
+          name="laminado"
+          value="0"
+        />
       </div>
     </div>
 
@@ -59,47 +103,114 @@
     <h5 class="mt-4">📏 Rangos de presupuesto (cm²)</h5>
     <div id="presupuestos-container">
       <div class="grupo-contenedor presupuesto-group">
-        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none" onclick="this.parentElement.remove()">Eliminar</button>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none"
+          onclick="this.parentElement.remove()"
+        >
+          Eliminar
+        </button>
         <div class="row g-3">
           <div class="col-md-4">
             <label class="form-label">Desde</label>
-            <input type="number" step="any" min="0" class="form-control" name="medida_inicio[]" required />
+            <input
+              type="number"
+              step="any"
+              min="0"
+              class="form-control"
+              name="medida_inicio[]"
+              required
+            />
           </div>
           <div class="col-md-4">
             <label class="form-label">Hasta</label>
-            <input type="number" step="any" min="0" class="form-control" name="medida_fin[]" required />
+            <input
+              type="number"
+              step="any"
+              min="0"
+              class="form-control"
+              name="medida_fin[]"
+              required
+            />
           </div>
           <div class="col-md-4">
             <label class="form-label">Monto</label>
-            <input type="number" step="any" min="0" class="form-control" name="monto_entre_medidas[]" required />
+            <input
+              type="number"
+              step="any"
+              min="0"
+              class="form-control"
+              name="monto_entre_medidas[]"
+              required
+            />
           </div>
         </div>
       </div>
     </div>
-    <button type="button" class="btn btn-outline-primary mb-3" onclick="agregarPresupuesto()">+ Agregar</button>
+    <button
+      type="button"
+      class="btn btn-outline-primary mb-3"
+      onclick="agregarPresupuesto()"
+    >
+      + Agregar
+    </button>
 
     <!-- DESCUENTOS -->
     <h5 class="mt-4">🎯 Descuentos por cantidad</h5>
     <div id="descuentos-container">
       <div class="grupo-contenedor descuento-group">
-        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none" onclick="this.parentElement.remove()">Eliminar</button>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none"
+          onclick="this.parentElement.remove()"
+        >
+          Eliminar
+        </button>
         <div class="row g-3">
           <div class="col-md-4">
             <label class="form-label">Cantidad desde</label>
-            <input type="number" step="any" min="0" class="form-control" name="cantidad_inicio[]" required />
+            <input
+              type="number"
+              step="any"
+              min="0"
+              class="form-control"
+              name="cantidad_inicio[]"
+              required
+            />
           </div>
           <div class="col-md-4">
             <label class="form-label">Cantidad hasta</label>
-            <input type="number" step="any" min="0" class="form-control" name="cantidad_fin[]" required />
+            <input
+              type="number"
+              step="any"
+              min="0"
+              class="form-control"
+              name="cantidad_fin[]"
+              required
+            />
           </div>
           <div class="col-md-4">
             <label class="form-label">% Descuento</label>
-            <input type="number" step="any" min="0" max="100" class="form-control" name="porcentaje_descuento[]" value="0" />
+            <input
+              type="number"
+              step="any"
+              min="0"
+              max="100"
+              class="form-control"
+              name="porcentaje_descuento[]"
+              value="0"
+            />
           </div>
         </div>
       </div>
     </div>
-    <button type="button" class="btn btn-outline-primary mb-4" onclick="agregarDescuento()">+ Agregar</button>
+    <button
+      type="button"
+      class="btn btn-outline-primary mb-4"
+      onclick="agregarDescuento()"
+    >
+      + Agregar
+    </button>
 
     <!-- SUBMIT -->
     <div class="text-end">
@@ -111,9 +222,19 @@
 <!-- ========================= BUSCADOR ========================= -->
 <form method="get" class="mb-4">
   <div class="input-group">
-    <input type="text" class="form-control" name="busqueda" placeholder="Buscar material..." value="{{ request.args.get('busqueda', '') }}">
+    <input
+      type="text"
+      class="form-control"
+      name="busqueda"
+      placeholder="Buscar material..."
+      value="{{ request.args.get('busqueda', '') }}"
+    />
     <button type="submit" class="btn btn-outline-primary">Buscar</button>
-    <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-outline-secondary">Limpiar</a>
+    <a
+      href="{{ url_for('admin.admin_panel') }}"
+      class="btn btn-outline-secondary"
+      >Limpiar</a
+    >
   </div>
 </form>
 
@@ -130,7 +251,9 @@
         <th>Desde (cm²)</th>
         <th>Hasta (cm²)</th>
         <th>Monto (cm²)</th>
-        {% if login %}<th>Acciones</th>{% endif %}
+        {% if login %}
+        <th>Acciones</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
@@ -142,14 +265,25 @@
         <td>{{ p.monto_entre_medidas }}</td>
         {% if login %}
         <td>
-          <a href="{{ url_for('admin.delete_presupuesto', presupuesto_id=p.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este rango de presupuesto?');">Eliminar</a>
-          <a href="{{ url_for('admin.edit_material', material_id=p.material.id) }}" class="btn btn-sm btn-warning">Editar</a>
+          <a
+            href="{{ url_for('admin.delete_presupuesto', presupuesto_id=p.id) }}"
+            class="btn btn-sm btn-danger"
+            onclick="return confirm('¿Eliminar este rango de presupuesto?');"
+            >Eliminar</a
+          >
+          <a
+            href="{{ url_for('admin.edit_material', material_id=p.material.id) }}"
+            class="btn btn-sm btn-warning"
+            >Editar</a
+          >
         </td>
         {% endif %}
       </tr>
       {% else %}
       <tr>
-        <td colspan="{% if login %}5{% else %}4{% endif %}" class="text-center">No hay rangos cargados.</td>
+        <td colspan="{% if login %}5{% else %}4{% endif %}" class="text-center">
+          No hay rangos cargados.
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -180,7 +314,9 @@
       </tr>
       {% else %}
       <tr>
-        <td colspan="{% if login %}7{% else %}6{% endif %}" class="text-center">No hay descuentos aún.</td>
+        <td colspan="{% if login %}7{% else %}6{% endif %}" class="text-center">
+          No hay descuentos aún.
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -190,32 +326,43 @@
 <!-- ========================= EDITAR CREDENCIALES ========================= -->
 <div class="card-custom">
   <h2 class="mb-4">🔑 Editar Credenciales</h2>
-
-  <form method="post" action="{{ url_for('admin.edit_credenciales') }}" class="credenciales-form">
+  <form
+    method="post"
+    action="{{ url_for('admin.edit_credenciales') }}"
+    class="credenciales-form"
+  >
     {% for cred in credenciales %}
-      <div class="mb-3">
-        <label for="usuario_{{ cred.id }}">Usuario</label>
-        <input
-          type="text"
-          class="form-control"
-          id="usuario_{{ cred.id }}"
-          name="usuario_{{ cred.id }}"
-          value="{{ cred.usuario }}"
-          readonly
-        >
-      </div>
-      <div class="mb-3">
-        <label for="contrasena_{{ cred.id }}">Contraseña</label>
-        <input 
-        type="text" 
+    <div class="mb-3">
+      <label for="usuario_{{ cred.id }}">Usuario</label>
+      <input
+        type="text"
         class="form-control"
-        id="contrasena_{{ cred.id }}"
-        name="contrasena_{{ cred.id }}" 
-        value="{{ cred.plain_password }}"
-        required
-        >
-      </div>
-      <hr>
+        id="usuario_{{ cred.id }}"
+        name="usuario_{{ cred.id }}"
+        value="{{ cred.usuario }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label for="contrasena_actual_{{ cred.id }}">Contraseña Actual</label>
+      <input
+        type="password"
+        class="form-control"
+        id="contrasena_actual_{{ cred.id }}"
+        name="contrasena_actual_{{ cred.id }}"
+        placeholder="Ingrese la contraseña actual"
+      />
+    </div>
+    <div class="mb-3">
+      <label for="contrasena_nueva_{{ cred.id }}">Nueva Contraseña</label>
+      <input
+        type="password"
+        class="form-control"
+        id="contrasena_nueva_{{ cred.id }}"
+        name="contrasena_nueva_{{ cred.id }}"
+        placeholder="Ingrese la nueva contraseña"
+      />
+    </div>
+    <hr />
     {% endfor %}
     <div class="text-end">
       <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
@@ -230,7 +377,7 @@
     const original = document.querySelector(".presupuesto-group");
     const clone = original.cloneNode(true);
 
-    clone.querySelectorAll("input").forEach(input => input.value = "");
+    clone.querySelectorAll("input").forEach((input) => (input.value = ""));
     clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
 
     container.appendChild(clone);
@@ -241,7 +388,7 @@
     const original = document.querySelector(".descuento-group");
     const clone = original.cloneNode(true);
 
-    clone.querySelectorAll("input").forEach(input => {
+    clone.querySelectorAll("input").forEach((input) => {
       input.value = input.name.includes("porcentaje_descuento") ? "0" : "";
     });
     clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");

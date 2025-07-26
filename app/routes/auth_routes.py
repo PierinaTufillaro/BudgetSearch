@@ -2,8 +2,9 @@
 
 from flask import Blueprint, request, render_template, redirect, url_for, session
 from app.models import Material, Credenciales
-from ..helpers import fernet
 from datetime import datetime
+from werkzeug.security import check_password_hash
+
 
 auth_routes = Blueprint('auth', __name__)
 
@@ -20,7 +21,7 @@ def client_login():
     if request.method == "POST":
         clave = request.form.get("contrasena", "").strip()
         cred = Credenciales.query.filter_by(usuario="client").first()
-        if cred and fernet.decrypt(cred.contrasena.encode()).decode() == clave:
+        if cred and check_password_hash(cred.contrasena, clave):
             session.permanent = True
             session['user_type'] = 'client'
             session['login_time'] = datetime.utcnow().isoformat()
@@ -35,7 +36,7 @@ def admin_login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
         cred = Credenciales.query.filter_by(usuario=username).first()
-        if cred and fernet.decrypt(cred.contrasena.encode()).decode() == password:
+        if cred and check_password_hash(cred.contrasena, password):
             session.permanent = True
             session['user_type'] = 'admin'
             session['login_time'] = datetime.utcnow().isoformat()
