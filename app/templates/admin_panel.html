@@ -98,6 +98,44 @@
         />
       </div>
     </div>
+    <!-- MATERIALES MONTADOS -->
+    <h5 class="mt-4">📦 Materiales para Montaje</h5>
+    <div id="montados-container">
+      <div class="grupo-contenedor montado-group">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none"
+          onclick="this.parentElement.remove()"
+        >
+          Eliminar
+        </button>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Nombre del material de montaje</label>
+            <input type="text" class="form-control" name="nombre_montado[]" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">% Aumento por montaje</label>
+            <input
+              type="number"
+              step="any"
+              min="0"
+              class="form-control"
+              name="porcentaje_por_montado[]"
+              value="0"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="btn btn-outline-primary mb-4"
+      onclick="agregarMontado()"
+    >
+      + Agregar
+    </button>
 
     <!-- PRESUPUESTOS -->
     <h5 class="mt-4">📏 Rangos de presupuesto (cm²)</h5>
@@ -142,6 +180,7 @@
               class="form-control"
               name="monto_entre_medidas[]"
               required
+              value="0"
             />
           </div>
         </div>
@@ -250,7 +289,7 @@
         <th>Material</th>
         <th>Desde (cm²)</th>
         <th>Hasta (cm²)</th>
-        <th>Monto (cm²)</th>
+        <th>Monto por Unidad</th>
         {% if login %}
         <th>Acciones</th>
         {% endif %}
@@ -266,9 +305,9 @@
         {% if login %}
         <td>
           <a
-            href="{{ url_for('admin.delete_presupuesto', presupuesto_id=p.id) }}"
+            href="{{ url_for('admin.delete_material', material_id=p.material.id) }}"
             class="btn btn-sm btn-danger"
-            onclick="return confirm('¿Eliminar este rango de presupuesto?');"
+            onclick="return confirm('¿Eliminar este material por completo?');"
             >Eliminar</a
           >
           <a
@@ -286,6 +325,35 @@
         </td>
       </tr>
       {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Montado en Material -->
+<h4>📦 Montado en Material</h4>
+<div class="table-responsive mb-4">
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Material Principal</th>
+        <th>Montado en Material</th>
+        <th>% Por montado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set tiene_montados = false %} {% for material in materiales %} {% if
+      material.materiales_montados %} {% for montado in
+      material.materiales_montados %}
+      <tr>
+        <td>{{ material.nombre }}</td>
+        <td>{{ montado.nombre }}</td>
+        <td>{{ montado.porcentaje_por_montado }}</td>
+      </tr>
+      {% endfor %} {% endif %} {% endfor %} {% if not tiene_montados %}
+      <tr>
+        <td colspan="3" class="text-center">No hay montados.</td>
+      </tr>
+      {% endif %}
     </tbody>
   </table>
 </div>
@@ -391,6 +459,21 @@
     clone.querySelectorAll("input").forEach((input) => {
       input.value = input.name.includes("porcentaje_descuento") ? "0" : "";
     });
+    clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
+
+    container.appendChild(clone);
+  }
+
+  function agregarMontado() {
+    const container = document.getElementById("montados-container");
+    const original = document.querySelector(".montado-group");
+    const clone = original.cloneNode(true);
+
+    clone
+      .querySelectorAll("input")
+      .forEach(
+        (input) => (input.value = input.name.includes("porcentaje") ? "0" : "")
+      );
     clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
 
     container.appendChild(clone);

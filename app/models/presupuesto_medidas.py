@@ -6,7 +6,7 @@ class PresupuestoMedidas(db.Model):
     medida_fin = db.Column(db.Float, nullable=False)
     monto_entre_medidas = db.Column(db.Float, nullable=False)
 
-    material_id = db.Column(db.Integer, db.ForeignKey('material.id'), nullable=False)
+    material_id = db.Column(db.Integer, db.ForeignKey('material.id', ondelete="CASCADE"), nullable=False)
 
     def __repr__(self):
         return (f'<PresupuestoMedidas {self.id} Material {self.material_id} '

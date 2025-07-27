@@ -9,6 +9,10 @@ from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+import sqlite3
+
 load_dotenv()
 
 def create_app():
@@ -23,6 +27,14 @@ def create_app():
 
     # Inicialización de extensiones
     db.init_app(app)
+
+    # Activar foreign keys en SQLite
+    @event.listens_for(Engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        if isinstance(dbapi_connection, sqlite3.Connection):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON;")
+            cursor.close()
 
     # Registro de blueprints
     app.register_blueprint(auth_routes)

@@ -38,6 +38,14 @@
       </select>
     </div>
 
+    <div class="mb-3" id="montaje-div" style="display:none;">
+      <label for="material_montado" class="form-label">Montaje</label>
+      <select class="form-select" id="material_montado" name="material_montado">
+        <option value="" selected disabled>Seleccione un tipo de montaje</option>
+      </select>
+    </div>
+    
+  
     <div class="mb-3">
       <label for="cantidad" class="form-label">Cantidad</label>
       <input type="number" step="1" min="1" class="form-control" id="cantidad" name="cantidad" required value="{{ request.form.cantidad }}">
@@ -62,11 +70,59 @@
         <p><strong>Área:</strong> {{ resultado.area }} cm²</p>
         <p><strong>Laminado:</strong> {{ 'Sí' if resultado.laminado else 'No' }}</p>
         <p><strong>Descuento por cantidad aplicado:</strong> {{ resultado.descuento_cantidad }} %</p>
+        {% if resultado.material_montado %}
+          <p><strong>Precio adicional por montaje ({{ resultado.material_montado }}):</strong> ${{ resultado.precio_montado }}</p>
+        {% endif %}
         <p><strong>Precio unitario (por pieza):</strong> ${{ resultado.precio_unitario }}</p>
         <p><strong>Precio total:</strong> ${{ resultado.precio_total }}</p>
       </div>
     {% endif %}
-  {% endif %}
+{% endif %}
+
 </div>
 
+<script>
+  const montajesPorMaterial = {{ materiales_montados | tojson }};
+  const materialSelect = document.getElementById("material");
+  const montajeDiv = document.getElementById("montaje-div");
+  const montajeSelect = document.getElementById("material_montado");
+
+  function actualizarMontajes() {
+    const materialId = materialSelect.value;
+    const montajes = montajesPorMaterial[materialId] || [];
+
+    montajeSelect.options.length = 1; // solo opción default
+
+    if (montajes.length > 0) {
+      montajes.forEach(m => {
+        const option = document.createElement("option");
+        option.value = m.id;
+        option.textContent = `${m.nombre} (${m.porcentaje} %)`;
+        montajeSelect.appendChild(option);
+      });
+      montajeDiv.style.display = "block";
+    } else {
+      montajeDiv.style.display = "none";
+    }
+  }
+
+  materialSelect.addEventListener("change", actualizarMontajes);
+
+  window.addEventListener("DOMContentLoaded", () => {
+    if (materialSelect.value) {
+      actualizarMontajes();
+
+      setTimeout(() => {
+        const seleccionado = "{{ request.form.material_montado | default('') }}";
+        if (seleccionado) {
+          montajeSelect.value = seleccionado;
+        }
+      }, 0);
+    }
+  });
+</script>
+
 {% endblock %}
+
+
+

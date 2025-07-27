@@ -1,8 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="card p-4 mb-4">
-  <h3 class="mb-4">Editar Material: {{ material.nombre }}</h3>
+<style>
+  .card-custom {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .grupo-contenedor {
+    position: relative;
+    padding-right: 3rem;
+    border-radius: 0.5rem;
+    border: 1px dashed #ccc;
+    margin-bottom: 1rem;
+    padding: 1rem;
+  }
+  .btn-eliminar-grupo {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
+  }
+  .section-title {
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: bold;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 0.5rem;
+  }
+</style>
+
+<div class="card-custom">
+  <h3 class="mb-4">✏️ Editar Material: {{ material.nombre }}</h3>
 
   <form method="post">
     <div class="mb-3">
@@ -15,49 +47,200 @@
       <input type="number" class="form-control" id="laminado" name="laminado" value="{{ material.porcentaje_por_laminado }}" step="any" min="0" max="100">
     </div>
 
-    <hr>
-
-    <h5>Rangos de presupuesto</h5>
-    {% for p in presupuestos %}
-    <div class="row g-3 mb-3">
-      <div class="col-md-4">
-        <label class="form-label">Desde (cm²)</label>
-        <input type="number" class="form-control" name="medida_inicio[]" value="{{ p.medida_inicio }}" step="any" required>
+    <!-- ======= Materiales Montados ======= -->
+    <h5 class="section-title">📦 Materiales Montados</h5>
+    <div id="montados-container">
+      {% for montado in material.materiales_montados %}
+      <div class="grupo-contenedor montado-group">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger btn-eliminar-grupo"
+          onclick="this.parentElement.remove()"
+          title="Eliminar montaje"
+        >
+          &times;
+        </button>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Nombre del material de montaje</label>
+            <input type="text" class="form-control" name="nombre_montado[]" value="{{ montado.nombre }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">% Aumento por montaje</label>
+            <input type="number" step="any" min="0" class="form-control" name="porcentaje_por_montado[]" value="{{ montado.porcentaje_por_montado }}" required>
+          </div>
+        </div>
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Hasta (cm²)</label>
-        <input type="number" class="form-control" name="medida_fin[]" value="{{ p.medida_fin }}" step="any" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Monto</label>
-        <input type="number" class="form-control" name="monto_entre_medidas[]" value="{{ p.monto_entre_medidas }}" step="any" required>
-      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
+    <button type="button" class="btn btn-outline-primary mb-4" onclick="agregarMontado()">
+      + Agregar
+    </button>
 
-    <hr>
-
-    <h5>Descuentos por cantidad</h5>
-    {% for d in descuentos %}
-    <div class="row g-3 mb-3">
-      <div class="col-md-4">
-        <label class="form-label">Desde</label>
-        <input type="number" class="form-control" name="cantidad_inicio[]" value="{{ d.cantidad_inicio }}" step="any" required>
+    <!-- ======= Rangos de presupuesto ======= -->
+    <h5 class="section-title">📏 Rangos de presupuesto</h5>
+    <div id="presupuestos-container">
+      {% for p in presupuestos %}
+      <div class="grupo-contenedor presupuesto-group">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger btn-eliminar-grupo"
+          onclick="this.parentElement.remove()"
+          title="Eliminar rango"
+        >
+          &times;
+        </button>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Desde (cm²)</label>
+            <input type="number" class="form-control" name="medida_inicio[]" value="{{ p.medida_inicio }}" step="any" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Hasta (cm²)</label>
+            <input type="number" class="form-control" name="medida_fin[]" value="{{ p.medida_fin }}" step="any" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Monto</label>
+            <input type="number" class="form-control" name="monto_entre_medidas[]" value="{{ p.monto_entre_medidas }}" step="any" required>
+          </div>
+        </div>
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Hasta</label>
-        <input type="number" class="form-control" name="cantidad_fin[]" value="{{ d.cantidad_fin }}" step="any" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">% Descuento</label>
-        <input type="number" class="form-control" name="porcentaje_descuento[]" value="{{ d.porcentaje_descuento_por_cantidad }}" step="any" required>
-      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
+    <button type="button" class="btn btn-outline-primary mb-4" onclick="agregarPresupuesto()">
+      + Agregar
+    </button>
 
-    <button type="submit" class="btn btn-success mt-3">Guardar cambios</button>
-    <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-secondary mt-3">Cancelar</a>
+    <!-- ======= Descuentos por cantidad ======= -->
+    <h5 class="section-title">🎯 Descuentos por cantidad</h5>
+    <div id="descuentos-container">
+      {% for d in descuentos %}
+      <div class="grupo-contenedor descuento-group">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger btn-eliminar-grupo"
+          onclick="this.parentElement.remove()"
+          title="Eliminar descuento"
+        >
+          &times;
+        </button>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Desde</label>
+            <input type="number" class="form-control" name="cantidad_inicio[]" value="{{ d.cantidad_inicio }}" step="any" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Hasta</label>
+            <input type="number" class="form-control" name="cantidad_fin[]" value="{{ d.cantidad_fin }}" step="any" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">% Descuento</label>
+            <input type="number" class="form-control" name="porcentaje_descuento[]" value="{{ d.porcentaje_descuento_por_cantidad }}" step="any" required>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <button type="button" class="btn btn-outline-primary mb-4" onclick="agregarDescuento()">
+      + Agregar
+    </button>
+
+    <div class="text-end">
+      <button type="submit" class="btn btn-success mt-3">💾 Guardar cambios</button>
+      <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-secondary mt-3">Cancelar</a>
+    </div>
   </form>
 </div>
+
+<script>
+  function agregarMontado() {
+    const container = document.getElementById("montados-container");
+    const div = document.createElement("div");
+    div.className = "grupo-contenedor montado-group";
+    div.innerHTML = `
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-danger btn-eliminar-grupo"
+        onclick="this.parentElement.remove()"
+        title="Eliminar montaje"
+      >
+        &times;
+      </button>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nombre del material de montaje</label>
+          <input type="text" class="form-control" name="nombre_montado[]" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">% Aumento por montaje</label>
+          <input type="number" step="any" min="0" class="form-control" name="porcentaje_por_montado[]" value="0" required>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  }
+
+  function agregarPresupuesto() {
+    const container = document.getElementById("presupuestos-container");
+    const div = document.createElement("div");
+    div.className = "grupo-contenedor presupuesto-group";
+    div.innerHTML = `
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-danger btn-eliminar-grupo"
+        onclick="this.parentElement.remove()"
+        title="Eliminar rango"
+      >
+        &times;
+      </button>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Desde (cm²)</label>
+          <input type="number" class="form-control" name="medida_inicio[]" step="any" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Hasta (cm²)</label>
+          <input type="number" class="form-control" name="medida_fin[]" step="any" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Monto</label>
+          <input type="number" class="form-control" name="monto_entre_medidas[]" step="any" required>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  }
+
+  function agregarDescuento() {
+    const container = document.getElementById("descuentos-container");
+    const div = document.createElement("div");
+    div.className = "grupo-contenedor descuento-group";
+    div.innerHTML = `
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-danger btn-eliminar-grupo"
+        onclick="this.parentElement.remove()"
+        title="Eliminar descuento"
+      >
+        &times;
+      </button>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Desde</label>
+          <input type="number" class="form-control" name="cantidad_inicio[]" step="any" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Hasta</label>
+          <input type="number" class="form-control" name="cantidad_fin[]" step="any" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">% Descuento</label>
+          <input type="number" class="form-control" name="porcentaje_descuento[]" step="any" required>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  }
+</script>
 
 {% endblock %}
