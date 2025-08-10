@@ -15,11 +15,6 @@ def login_required(role):
                 # Siempre manda al login del rol requerido
                 return redirect(url_for(f'auth.{role}_login'))
 
-            if session.get('user_type') != role:
-                session.clear()
-                flash('Por favor, iniciá sesión correctamente.', 'danger')
-                return redirect(url_for(f'auth.{role}_login'))
-
             if 'login_time' in session:
                 now = datetime.utcnow()
                 login_time = datetime.fromisoformat(session['login_time'])
