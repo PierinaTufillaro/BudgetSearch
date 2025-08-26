@@ -29,7 +29,7 @@ It was designed to be lightweight, simple, and easy to deploy.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/budget-app.git
+   git clone git@github.com:PierinaTufillaro/BudgetSearch.git
    cd budget-app
    ```
 
