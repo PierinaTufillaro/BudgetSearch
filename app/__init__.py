@@ -11,6 +11,8 @@ from flask_talisman import Talisman
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash
+from .models import Credenciales 
 
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
@@ -20,6 +22,24 @@ load_dotenv()
 limiter = Limiter(key_func=get_remote_address)
 talisman = Talisman()
 
+def seed_users(app):
+    with app.app_context():
+        # Verificar si ya existen los usuarios
+        if not Credenciales.query.filter_by(usuario='admin').first():
+            admin = Credenciales(
+                usuario='admin',
+                contrasena=generate_password_hash('admin123'),
+            )
+            db.session.add(admin)
+
+        if not Credenciales.query.filter_by(usuario='client').first():
+            client = Credenciales(
+                usuario='client',
+                contrasena=generate_password_hash('client123'),
+            )
+            db.session.add(client)
+
+        db.session.commit()
 
 def create_app():
     """Crea y configura la aplicación Flask."""
@@ -33,6 +53,12 @@ def create_app():
 
     # Inicialización de extensiones
     db.init_app(app)
+    # Creación de tablas
+    with app.app_context():
+        from . import models
+        db.create_all()
+        seed_users(app)
+        
     limiter.init_app(app)
     csp = {
         'default-src': "'self'",
@@ -55,9 +81,5 @@ def create_app():
     app.register_blueprint(client_routes)
     app.register_blueprint(admin_routes)
 
-    # Creación de tablas
-    with app.app_context():
-        from . import models
-        db.create_all()
 
     return app
