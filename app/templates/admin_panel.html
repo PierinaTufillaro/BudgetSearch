@@ -341,15 +341,18 @@
       </tr>
     </thead>
     <tbody>
-      {% set tiene_montados = false %} {% for material in materiales %} {% if
-      material.materiales_montados %} {% for montado in
-      material.materiales_montados %}
-      <tr>
-        <td>{{ material.nombre }}</td>
-        <td>{{ montado.nombre }}</td>
-        <td>{{ montado.porcentaje_por_montado }}</td>
-      </tr>
-      {% endfor %} {% endif %} {% endfor %} {% if not tiene_montados %}
+      {% set total_montados = materiales | map(attribute='materiales_montados') | sum(start=[]) %}
+      {% if total_montados %}
+        {% for material in materiales %}
+          {% for montado in material.materiales_montados %}
+          <tr>
+            <td>{{ material.nombre }}</td>
+            <td>{{ montado.nombre }}</td>
+            <td>{{ montado.porcentaje_por_montado }}</td>
+          </tr>
+          {% endfor %}
+        {% endfor %}
+      {% else %}
       <tr>
         <td colspan="3" class="text-center">No hay montados.</td>
       </tr>
@@ -358,38 +361,6 @@
   </table>
 </div>
 
-<!-- Descuentos -->
-<h4>💸 Descuentos por Cantidad</h4>
-<div class="table-responsive mb-4">
-  <table class="table table-bordered table-striped">
-    <thead>
-      <tr>
-        <th>Material</th>
-        <th>% Laminado</th>
-        <th>Desde</th>
-        <th>Hasta</th>
-        <th>% Descuento</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for d in descuentos %}
-      <tr>
-        <td>{{ d.material.nombre }}</td>
-        <td>{{ d.material.porcentaje_por_laminado }}</td>
-        <td>{{ d.cantidad_inicio }}</td>
-        <td>{{ d.cantidad_fin }}</td>
-        <td>{{ d.porcentaje_descuento_por_cantidad }}</td>
-      </tr>
-      {% else %}
-      <tr>
-        <td colspan="{% if login %}7{% else %}6{% endif %}" class="text-center">
-          No hay descuentos aún.
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
 
 <!-- ========================= EDITAR CREDENCIALES ========================= -->
 <div class="card-custom">
