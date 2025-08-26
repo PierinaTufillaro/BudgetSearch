@@ -64,7 +64,7 @@ def create_app():
         'default-src': "'self'",
         'style-src': ["'self'", "https://cdn.jsdelivr.net"],
         'font-src': ["'self'", "https://cdn.jsdelivr.net"],
-        'script-src': ["'self'", "https://cdn.jsdelivr.net"]
+        'script-src': ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"]
     }
     Talisman(app, content_security_policy=csp)
     
