@@ -361,6 +361,37 @@
   </table>
 </div>
 
+<!-- Descuentos por cantidad -->
+<h4>🎯 Descuentos por Cantidad</h4>
+<div class="table-responsive mb-4">
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Material</th>
+        <th>Cantidad desde</th>
+        <th>Cantidad hasta</th>
+        <th>% Descuento</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in descuentos %}
+      <tr>
+        <td>{{ d.material.nombre }}</td>
+        <td>{{ d.cantidad_inicio }}</td>
+        <td>{{ d.cantidad_fin }}</td>
+        <td>{{ d.porcentaje_descuento_por_cantidad }}%</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" class="text-center">
+          No hay descuentos cargados.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
 
 <!-- ========================= EDITAR CREDENCIALES ========================= -->
 <div class="card-custom">
