@@ -20,7 +20,7 @@ def create_app():
     app = Flask(__name__, template_folder="templates", instance_relative_config=True)
 
     # Configuración básica
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../instance/presupuestos.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URI")
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.secret_key = os.getenv("FLASK_SECRET_KEY")
     app.permanent_session_lifetime = timedelta(hours=1)
