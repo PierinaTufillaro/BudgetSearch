@@ -69,12 +69,12 @@
         <p><strong>Material:</strong> {{ resultado.material }}</p>
         <p><strong>Área:</strong> {{ resultado.area }} cm²</p>
         <p><strong>Laminado:</strong> {{ 'Sí' if resultado.laminado else 'No' }}</p>
-        <p><strong>Descuento por cantidad aplicado:</strong> {{ resultado.descuento_cantidad }} %</p>
+        <p><strong>Descuento por cantidad aplicado:</strong> {{ resultado.descuento_cantidad }} </p>
         {% if resultado.material_montado %}
-          <p><strong>Precio adicional por montaje ({{ resultado.material_montado }}):</strong> ${{ resultado.precio_montado }}</p>
+          <p><strong>Precio adicional por montaje ({{ resultado.material_montado }}):</strong> {{ resultado.precio_montado }}</p>
         {% endif %}
-        <p><strong>Precio unitario (por pieza):</strong> ${{ resultado.precio_unitario }}</p>
-        <p><strong>Precio total:</strong> ${{ resultado.precio_total }}</p>
+        <p><strong>Precio unitario (por pieza):</strong> {{ resultado.precio_unitario }}</p>
+        <p><strong>Precio total:</strong> {{ resultado.precio_total }}</p>
       </div>
     {% endif %}
 {% endif %}
