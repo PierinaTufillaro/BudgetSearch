@@ -1,15 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 
-<style>
-  .card-custom {
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-  }
-</style>
+<!-- Botón de cerrar sesión -->
+<div class="d-flex justify-content-end mb-4">
+  <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">
+    <i class="bi bi-box-arrow-right me-2"></i>
+    Cerrar Sesión
+  </a>
+</div>
+
+<!-- Incluir CSS externo -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/client_index.css') }}">
 
 <div class="card-custom">
   <h2 class="mb-4">Calcular Presupuesto</h2>
@@ -39,10 +40,15 @@
     </div>
 
     <div class="mb-3" id="montaje-div" style="display:none;">
-      <label for="material_montado" class="form-label">Montaje</label>
+      <label for="material_montado" class="form-label">
+        Montaje <span class="text-muted">(Opcional)</span>
+      </label>
       <select class="form-select" id="material_montado" name="material_montado">
-        <option value="" selected disabled>Seleccione un tipo de montaje</option>
+        <option value="" selected>Sin montaje</option>
       </select>
+      <div class="form-text text-muted">
+        Seleccione un tipo de montaje si lo desea, o deje "Sin montaje" para continuar
+      </div>
     </div>
     
   
@@ -70,9 +76,13 @@
         <p><strong>Área:</strong> {{ resultado.area }} cm²</p>
         <p><strong>Laminado:</strong> {{ 'Sí' if resultado.laminado else 'No' }}</p>
         <p><strong>Descuento por cantidad aplicado:</strong> {{ resultado.descuento_cantidad }} </p>
-        {% if resultado.material_montado %}
-          <p><strong>Precio adicional por montaje ({{ resultado.material_montado }}):</strong> {{ resultado.precio_montado }}</p>
-        {% endif %}
+        <p><strong>Montaje:</strong> 
+          {% if resultado.material_montado %}
+            {{ resultado.material_montado }} ({{ resultado.precio_montado }} adicional)
+          {% else %}
+            Sin montaje
+          {% endif %}
+        </p>
         <p><strong>Precio unitario (por pieza):</strong> {{ resultado.precio_unitario }}</p>
         <p><strong>Precio total:</strong> {{ resultado.precio_total }}</p>
       </div>
@@ -91,7 +101,8 @@
     const materialId = materialSelect.value;
     const montajes = montajesPorMaterial[materialId] || [];
 
-    montajeSelect.options.length = 1; // solo opción default
+    // Limpiar opciones existentes y agregar la opción por defecto
+    montajeSelect.innerHTML = '<option value="" selected>Sin montaje</option>';
 
     if (montajes.length > 0) {
       montajes.forEach(m => {
@@ -112,12 +123,11 @@
     if (materialSelect.value) {
       actualizarMontajes();
 
-      setTimeout(() => {
-        const seleccionado = "{{ request.form.material_montado | default('') }}";
-        if (seleccionado) {
-          montajeSelect.value = seleccionado;
-        }
-      }, 0);
+      // Restaurar valor seleccionado si existe
+      const seleccionado = "{{ request.form.material_montado | default('') }}";
+      if (seleccionado) {
+        montajeSelect.value = seleccionado;
+      }
     }
   });
 </script>

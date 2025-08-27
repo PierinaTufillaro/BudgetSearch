@@ -49,7 +49,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URI")
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.secret_key = os.getenv("FLASK_SECRET_KEY")
-    app.permanent_session_lifetime = timedelta(hours=1)
+    app.permanent_session_lifetime = timedelta(hours=3)
 
     # Inicialización de extensiones
     db.init_app(app)
@@ -62,7 +62,7 @@ def create_app():
     limiter.init_app(app)
     csp = {
         'default-src': "'self'",
-        'style-src': ["'self'", "https://cdn.jsdelivr.net"],
+        'style-src': ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
         'font-src': ["'self'", "https://cdn.jsdelivr.net"],
         'script-src': ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"]
     }

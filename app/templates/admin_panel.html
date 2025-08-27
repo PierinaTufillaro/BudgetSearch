@@ -1,39 +1,15 @@
 {% extends "base.html" %} {% block content %}
 
-<style>
-  .card-custom {
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-  }
+<!-- Botón de cerrar sesión -->
+<div class="d-flex justify-content-end mb-4">
+  <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">
+    <i class="bi bi-box-arrow-right me-2"></i>
+    Cerrar Sesión
+  </a>
+</div>
 
-  .grupo-contenedor {
-    position: relative;
-    padding-right: 3rem;
-    border-radius: 0.5rem;
-    border: 1px dashed #ccc;
-    margin-bottom: 1rem;
-    padding: 1rem;
-  }
-
-  .btn-eliminar-grupo {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    z-index: 10;
-  }
-
-  .section-title {
-    margin-top: 2.5rem;
-    margin-bottom: 1.5rem;
-    font-weight: bold;
-    font-size: 1.5rem;
-    border-bottom: 2px solid #ccc;
-    padding-bottom: 0.5rem;
-  }
-</style>
+<!-- Incluir CSS externo -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_panel.css') }}">
 
 <!-- ========================= FORMULARIO PARA CARGA NUEVA ========================= -->
 {% with messages = get_flashed_messages(with_categories=true) %} {% if messages

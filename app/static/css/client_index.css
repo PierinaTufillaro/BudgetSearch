@@ -1,0 +1,310 @@
+/* Variables CSS para consistencia */
+:root {
+  --primary-color: #0d6efd;
+  --secondary-color: #6c757d;
+  --success-color: #198754;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #0dcaf0;
+  --light-color: #f8f9fa;
+  --dark-color: #212529;
+  --border-radius: 0.75rem;
+  --shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow-lg: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  --transition: all 0.3s ease;
+}
+
+/* Estilos generales mejorados */
+body {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+}
+
+.container {
+  padding: 2rem 0;
+}
+
+/* Card principal mejorada */
+.card-custom {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-custom::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+}
+
+.card-custom:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Título principal mejorado */
+.card-custom h2 {
+  color: var(--dark-color);
+  font-weight: 700;
+  font-size: 1.75rem;
+  margin-bottom: 2rem;
+  text-align: left;
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+.card-custom h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+  border-radius: 2px;
+}
+
+/* Formulario mejorado */
+.form-control, .form-select {
+  border-radius: 0.5rem;
+  border: 2px solid #e9ecef;
+  padding: 0.75rem 1rem;
+  transition: var(--transition);
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  transform: translateY(-1px);
+  background: white;
+}
+
+.form-label {
+  font-weight: 600;
+  color: var(--dark-color);
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Checkbox personalizado */
+.form-check-input {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.25rem;
+  border: 2px solid var(--secondary-color);
+  transition: var(--transition);
+}
+
+.form-check-input:checked {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  transform: scale(1.1);
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+.form-check-label {
+  font-weight: 500;
+  color: var(--dark-color);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Botón principal mejorado */
+.btn-success {
+  background: linear-gradient(135deg, var(--success-color), #146c43);
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #146c43, var(--success-color));
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Alertas mejoradas */
+.alert {
+  border-radius: var(--border-radius);
+  border: none;
+  padding: 1.5rem 2rem;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  margin-top: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.alert::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.alert-success {
+  background: linear-gradient(135deg, #d1e7dd, #badbcc);
+  color: #0f5132;
+  border-left: 4px solid var(--success-color);
+}
+
+.alert-success::before {
+  background: var(--success-color);
+}
+
+.alert-danger {
+  background: linear-gradient(135deg, #f8d7da, #f1aeb5);
+  color: #721c24;
+  border-left: 4px solid var(--danger-color);
+}
+
+.alert-danger::before {
+  background: var(--danger-color);
+}
+
+/* Contenido de alertas */
+.alert p {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.alert p:last-child {
+  margin-bottom: 0;
+}
+
+.alert strong {
+  color: var(--dark-color);
+  font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card-custom {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .card-custom h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .btn-success {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+  
+  .form-control, .form-select {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-custom {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Efectos de hover en campos */
+.form-control:hover, .form-select:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+/* Transiciones suaves */
+.row, .col-md-6, .mb-3 {
+  transition: var(--transition);
+}
+
+/* Estilos para el botón de logout */
+.btn-outline-danger {
+  border-radius: 0.5rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.875rem;
+}
+
+.btn-outline-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+/* Estilos para campos opcionales */
+.text-muted {
+  color: #6c757d !important;
+  font-size: 0.875rem;
+}
+
+.form-text {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  color: #6c757d;
+}
+
+/* Estilo especial para el campo de montaje */
+#montaje-div {
+  border-left: 3px solid var(--info-color);
+  padding-left: 1rem;
+  background: rgba(13, 202, 240, 0.05);
+  border-radius: 0.5rem;
+}
+
+
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0056b3;
+}

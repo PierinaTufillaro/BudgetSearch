@@ -69,4 +69,4 @@ def admin_login():
 @auth_routes.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("client_login"))
+    return redirect(url_for("auth.client_login"))
