@@ -43,7 +43,7 @@ def seed_users(app):
 
 def create_app():
     """Crea y configura la aplicación Flask."""
-    app = Flask(__name__, template_folder="templates", instance_relative_config=True)
+    app = Flask(__name__, template_folder="templates", static_folder="static", instance_relative_config=True)
 
     # Configuración básica
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URI")

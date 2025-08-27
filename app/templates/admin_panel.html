@@ -414,23 +414,33 @@
     </div>
     <div class="mb-3">
       <label for="contrasena_actual_{{ cred.id }}">Contraseña Actual</label>
-      <input
-        type="password"
-        class="form-control"
-        id="contrasena_actual_{{ cred.id }}"
-        name="contrasena_actual_{{ cred.id }}"
-        placeholder="Ingrese la contraseña actual"
-      />
+      <div class="input-group">
+        <input
+          type="password"
+          class="form-control"
+          id="contrasena_actual_{{ cred.id }}"
+          name="contrasena_actual_{{ cred.id }}"
+          placeholder="Ingrese la contraseña actual"
+        />
+        <button type="button" class="btn btn-outline-secondary toggle-password" style="border-left: 0;" data-target="contrasena_actual_{{ cred.id }}">
+          <i class="bi bi-eye"></i>
+        </button>
+      </div>
     </div>
     <div class="mb-3">
       <label for="contrasena_nueva_{{ cred.id }}">Nueva Contraseña</label>
-      <input
-        type="password"
-        class="form-control"
-        id="contrasena_nueva_{{ cred.id }}"
-        name="contrasena_nueva_{{ cred.id }}"
-        placeholder="Ingrese la nueva contraseña"
-      />
+      <div class="input-group">
+        <input
+          type="password"
+          class="form-control"
+          id="contrasena_nueva_{{ cred.id }}"
+          name="contrasena_nueva_{{ cred.id }}"
+          placeholder="Ingrese la nueva contraseña"
+        />
+        <button type="button" class="btn btn-outline-secondary toggle-password" style="border-left: 0;" data-target="contrasena_nueva_{{ cred.id }}">
+          <i class="bi bi-eye"></i>
+        </button>
+      </div>
     </div>
     <hr />
     {% endfor %}
@@ -480,6 +490,27 @@
 
     container.appendChild(clone);
   }
+
+  // Funcionalidad para mostrar/ocultar contraseñas
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.toggle-password').forEach(function(button) {
+      button.addEventListener('click', function() {
+        const targetId = this.getAttribute('data-target');
+        const passwordInput = document.getElementById(targetId);
+        const eyeIcon = this.querySelector('i');
+        
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          eyeIcon.classList.remove('bi-eye');
+          eyeIcon.classList.add('bi-eye-slash');
+        } else {
+          passwordInput.type = 'password';
+          eyeIcon.classList.remove('bi-eye-slash');
+          eyeIcon.classList.add('bi-eye');
+        }
+      });
+    });
+  });
 </script>
 
 {% endblock %}
