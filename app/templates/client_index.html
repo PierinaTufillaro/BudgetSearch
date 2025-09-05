@@ -51,7 +51,7 @@
       </div>
     </div>
     
-  
+    
     <div class="mb-3">
       <label for="cantidad" class="form-label">Cantidad</label>
       <input type="number" step="1" min="1" class="form-control" id="cantidad" name="cantidad" required value="{{ request.form.cantidad }}">
@@ -73,18 +73,18 @@
     {% else %}
       <div class="alert alert-success mt-4">
         <p><strong>Material:</strong> {{ resultado.material }}</p>
-        <p><strong>Área:</strong> {{ resultado.area }} cm²</p>
+        <p><strong>Dimensiones:</strong> {{ resultado.ancho }} × {{ resultado.alto }}</p>
+        <p><strong>Cantidad:</strong> {{ resultado.cantidad }} piezas</p>
         <p><strong>Laminado:</strong> {{ 'Sí' if resultado.laminado else 'No' }}</p>
-        <p><strong>Descuento por cantidad aplicado:</strong> {{ resultado.descuento_cantidad }} </p>
         <p><strong>Montaje:</strong> 
           {% if resultado.material_montado %}
-            {{ resultado.material_montado }} ({{ resultado.precio_montado }} adicional)
+            {{ resultado.material_montado }} 
           {% else %}
             Sin montaje
           {% endif %}
         </p>
-        <p><strong>Precio unitario (por pieza):</strong> {{ resultado.precio_unitario }}</p>
-        <p><strong>Precio total:</strong> {{ resultado.precio_total }}</p>
+        <p><strong>Precio por pieza ({{ resultado.ancho }} × {{ resultado.alto }}):</strong> {{ resultado.precio_por_pieza }}</p>
+        <p><strong>Precio total ({{ resultado.cantidad }} piezas):</strong> {{ resultado.precio_total }}</p>
       </div>
     {% endif %}
 {% endif %}
@@ -100,15 +100,15 @@
   function actualizarMontajes() {
     const materialId = materialSelect.value;
     const montajes = montajesPorMaterial[materialId] || [];
-
+  
     // Limpiar opciones existentes y agregar la opción por defecto
     montajeSelect.innerHTML = '<option value="" selected>Sin montaje</option>';
-
+  
     if (montajes.length > 0) {
       montajes.forEach(m => {
         const option = document.createElement("option");
         option.value = m.id;
-        option.textContent = `${m.nombre} (${m.porcentaje} %)`;
+        option.textContent = m.nombre;
         montajeSelect.appendChild(option);
       });
       montajeDiv.style.display = "block";

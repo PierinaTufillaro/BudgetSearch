@@ -98,20 +98,30 @@ def client_index():
                     porcentaje_montado = Decimal(str(montado.porcentaje_por_montado)) / Decimal("100")
                     nombre_montado = montado.nombre
 
-            precio_unitario_final = (precio_modificado * (Decimal("1") + porcentaje_montado)).quantize(PRECISION, rounding=ROUND_HALF_UP)
-
-            precio_total = (precio_unitario_final * cantidad).quantize(PRECISION, rounding=ROUND_HALF_UP)
-
-            precio_montado = (precio_unitario_final - precio_modificado).quantize(PRECISION, rounding=ROUND_HALF_UP)
+            # Precio por m² con todos los modificadores
+            precio_por_m2 = (precio_modificado * (Decimal("1") + porcentaje_montado)).quantize(PRECISION, rounding=ROUND_HALF_UP)
+            
+            # Precio por pieza completa (área × precio por m²)
+            precio_por_pieza = (precio_por_m2 * area).quantize(PRECISION, rounding=ROUND_HALF_UP)
+            
+            # Precio total (precio por pieza × cantidad)
+            precio_total = (precio_por_pieza * cantidad).quantize(PRECISION, rounding=ROUND_HALF_UP)
+            
+            # Precio adicional por montaje (por pieza)
+            precio_montado_por_pieza = (precio_por_m2 - precio_modificado) * area
+            precio_montado = precio_montado_por_pieza.quantize(PRECISION, rounding=ROUND_HALF_UP)
 
             resultado = {
                 "material": material.nombre,
+                "ancho": f"{ancho:.1f} cm",
+                "alto": f"{alto:.1f} cm",
                 "area": f"{area:.2f} m²",
-                "descuento_cantidad": f"{descuento_cantidad}%",
+                "cantidad": int(cantidad),
                 "laminado": laminado,
                 "material_montado": nombre_montado,
+                "precio_por_m2": formatear_precio(precio_por_m2),
+                "precio_por_pieza": formatear_precio(precio_por_pieza),
                 "precio_montado": formatear_precio(precio_montado),
-                "precio_unitario": formatear_precio(precio_unitario_final),
                 "precio_total": formatear_precio(precio_total)
             }
 
