@@ -1,134 +1,105 @@
-"""Rutas para administración."""
-
-from flask import Blueprint, request, render_template, redirect, url_for, flash
-from app.models import (
-    Material,
-    DescuentoCantidad,
-    PresupuestoMedidas,
-    Credenciales,
-    MaterialMontado,
-)
-from ..helpers import login_required
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from app.models import Material, Monto, Laminado, Montado, DescuentoCantidad, Credenciales
 from .. import db
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
+from ..helpers import login_required
+
 
 admin_routes = Blueprint("admin", __name__)
-
 
 @admin_routes.route("/admin_panel", methods=["GET", "POST"])
 @login_required("admin")
 def admin_panel():
-    """Panel principal del administrador con ABMs de materiales y credenciales."""
+    # ===========================
+    # CREAR NUEVO MATERIAL + RANGOS
+    # ===========================
     if request.method == "POST":
-        material_nombre = request.form["material"]
-        laminado = float(request.form["laminado"])
+        nombre_material = request.form.get("material")
+        if not nombre_material:
+            flash("El nombre del material es obligatorio", "danger")
+            return redirect(url_for("admin.admin_panel"))
 
-        material = Material.query.filter_by(nombre=material_nombre).first()
-        if not material:
-            material = Material(
-                nombre=material_nombre, porcentaje_por_laminado=laminado
-            )
-            db.session.add(material)
-            db.session.flush()
-        else:
-            material.porcentaje_por_laminado = laminado
-
-        DescuentoCantidad.query.filter_by(material_id=material.id).delete()
-        PresupuestoMedidas.query.filter_by(material_id=material.id).delete()
-        MaterialMontado.query.filter_by(material_id=material.id).delete()
-
-        # Cargar montados
-        nombres_montado = request.form.getlist("nombre_montado[]")
-        porcentajes_montado = request.form.getlist("porcentaje_por_montado[]")
-
-        for nombre, porcentaje in zip(nombres_montado, porcentajes_montado):
-            if nombre.strip() and porcentaje:
-                nuevo_montado = MaterialMontado(
-                    nombre=nombre.strip(),
-                    porcentaje_por_montado=float(porcentaje),
-                    material_id=material.id,
-                )
-                db.session.add(nuevo_montado)
-
-        # Cargar descuentos por cantidad
-        inicios = request.form.getlist("cantidad_inicio[]")
-        fines = request.form.getlist("cantidad_fin[]")
-        descuentos = request.form.getlist("porcentaje_descuento[]")
-
-        for inicio, fin, desc in zip(inicios, fines, descuentos):
-            if inicio and fin and desc:
-                nuevo_descuento = DescuentoCantidad(
-                    cantidad_inicio=float(inicio),
-                    cantidad_fin=float(fin),
-                    porcentaje_descuento_por_cantidad=float(desc),
-                    material_id=material.id,
-                )
-                db.session.add(nuevo_descuento)
-
-        # Cargar presupuestos por medidas
-        m_inicios = request.form.getlist("medida_inicio[]")
-        m_fines = request.form.getlist("medida_fin[]")
-        montos = request.form.getlist("monto_entre_medidas[]")
-
-        for m_inicio, m_fin, monto in zip(m_inicios, m_fines, montos):
-            if m_inicio and m_fin and monto:
-                nuevo_presupuesto = PresupuestoMedidas(
-                    medida_inicio=float(m_inicio),
-                    medida_fin=float(m_fin),
-                    monto_entre_medidas=float(monto),
-                    material_id=material.id,
-                )
-                db.session.add(nuevo_presupuesto)
-
-        # Confirmar todos los cambios
+        material = Material(nombre=nombre_material)
+        db.session.add(material)
         db.session.commit()
+
+        # Guardar rangos de presupuesto
+        medidas_inicio = request.form.getlist("medida_inicio[]")
+        medidas_fin = request.form.getlist("medida_fin[]")
+        montos = request.form.getlist("monto_entre_medidas[]")
+        laminados = request.form.getlist("laminado_new_new")
+
+        for i in range(len(medidas_inicio)):
+            monto_obj = Monto(
+                material_id=material.id,
+                desde=float(medidas_inicio[i]),
+                hasta=float(medidas_fin[i]),
+                monto=float(montos[i])
+            )
+            db.session.add(monto_obj)
+            db.session.commit()
+
+            # Laminado opcional
+            laminado_val = laminados[i] if i < len(laminados) and laminados[i] else None
+            if laminado_val:
+                lam = Laminado(monto_id=monto_obj.id, monto_laminado=float(laminado_val))
+                db.session.add(lam)
+
+            # Montados opcionales para este rango específico
+            nombres_montados_rango = request.form.getlist(f"nombre_montado_rango_{i}[]")
+            montos_montados_rango = request.form.getlist(f"monto_montado_rango_{i}[]")
+            
+            for j in range(len(nombres_montados_rango)):
+                if nombres_montados_rango[j] and j < len(montos_montados_rango) and montos_montados_rango[j]:
+                    montado = Montado(
+                        monto_id=monto_obj.id,
+                        nombre_material_montaje=nombres_montados_rango[j],
+                        monto_montado=float(montos_montados_rango[j])
+                    )
+                    db.session.add(montado)
+
+        # Descuentos opcionales
+        cant_inicio = request.form.getlist("cantidad_inicio[]")
+        cant_fin = request.form.getlist("cantidad_fin[]")
+        porc_desc = request.form.getlist("porcentaje_descuento[]")
+        for i in range(len(cant_inicio)):
+            descuento = DescuentoCantidad(
+                material_id=material.id,
+                cantidad_inicio=float(cant_inicio[i]),
+                cantidad_fin=float(cant_fin[i]),
+                porcentaje_descuento_por_cantidad=float(porc_desc[i])
+            )
+            db.session.add(descuento)
+
+        db.session.commit()
+        flash("Material y rangos guardados correctamente", "success")
         return redirect(url_for("admin.admin_panel"))
 
-    # GET: Mostrar panel con filtros
-    filtro = request.args.get("busqueda", "")
-    if filtro:
-        descuentos = (
-            DescuentoCantidad.query.join(Material)
-            .filter(Material.nombre.ilike(f"%{filtro}%"))
-            .order_by(Material.nombre.asc())
-            .all()
-        )
-        presupuestos = (
-            PresupuestoMedidas.query.join(Material)
-            .filter(Material.nombre.ilike(f"%{filtro}%"))
-            .order_by(Material.nombre.asc())
-            .all()
-        )
+    # ===========================
+    # MOSTRAR DATOS
+    # ===========================
+    busqueda = request.args.get("busqueda", "")
+    if busqueda:
+        materiales = Material.query.filter(Material.nombre.ilike(f"%{busqueda}%")).all()
     else:
-        descuentos = (
-            DescuentoCantidad.query.join(Material).order_by(Material.nombre.asc()).all()
-        )
-        presupuestos = (
-            PresupuestoMedidas.query.join(Material)
-            .order_by(Material.nombre.asc())
-            .all()
-        )
+        materiales = Material.query.all()
 
-    materiales = Material.query.order_by(Material.nombre.asc()).all()
-    credenciales = Credenciales.query.all()
+    montos = Monto.query.join(Material).all()
+    descuentos = DescuentoCantidad.query.join(Material).all()
+    laminados_por_monto = {l.monto_id: l for l in Laminado.query.all()}
+    montados_por_monto = {}
+    for monto in montos:
+        montados_por_monto[monto.id] = monto.montados  # relación Montado.monto_id -> monto.id
 
     return render_template(
         "admin_panel.html",
         login=True,
         materiales=materiales,
+        montos=montos,
         descuentos=descuentos,
-        presupuestos=presupuestos,
-        credenciales=credenciales,
+        laminados_por_monto=laminados_por_monto,
+        montados_por_monto=montados_por_monto
     )
-
-
-@admin_routes.route("/delete_descuento/<int:descuento_id>")
-@login_required("admin")
-def delete_descuento(descuento_id):
-    descuento = DescuentoCantidad.query.get_or_404(descuento_id)
-    db.session.delete(descuento)
-    db.session.commit()
-    return redirect(url_for("admin.admin_panel"))
 
 
 @admin_routes.route("/delete_material/<int:material_id>")
@@ -137,6 +108,7 @@ def delete_material(material_id):
     material = Material.query.get_or_404(material_id)
     db.session.delete(material)
     db.session.commit()
+    flash("Material eliminado correctamente", "success")
     return redirect(url_for("admin.admin_panel"))
 
 
@@ -144,169 +116,115 @@ def delete_material(material_id):
 @login_required("admin")
 def edit_material(material_id):
     material = Material.query.get_or_404(material_id)
-
     if request.method == "POST":
-        material.nombre = request.form.get("material", "").strip()
-        material.porcentaje_por_laminado = float(request.form.get("laminado", 0))
-
-        # Borro los rangos y descuentos viejos
-        PresupuestoMedidas.query.filter_by(material_id=material.id).delete()
+        # Actualizar nombre del material
+        material.nombre = request.form.get("material", material.nombre)
+        
+        # Eliminar datos existentes
+        # Primero eliminar Montados y Laminados (que dependen de Monto)
+        montos_existentes = Monto.query.filter_by(material_id=material.id).all()
+        for monto in montos_existentes:
+            Montado.query.filter_by(monto_id=monto.id).delete()
+            Laminado.query.filter_by(monto_id=monto.id).delete()
+        
+        # Luego eliminar Montos y Descuentos
+        Monto.query.filter_by(material_id=material.id).delete()
         DescuentoCantidad.query.filter_by(material_id=material.id).delete()
+        
+        # Guardar rangos de presupuesto
+        medidas_inicio = request.form.getlist("medida_inicio[]")
+        medidas_fin = request.form.getlist("medida_fin[]")
+        montos = request.form.getlist("monto_entre_medidas[]")
+        laminados = request.form.getlist("laminado_new_new")
 
-        # Borro los materiales montados viejos
-        MaterialMontado.query.filter_by(material_id=material.id).delete()
+        for i in range(len(medidas_inicio)):
+            monto_obj = Monto(
+                material_id=material.id,
+                desde=float(medidas_inicio[i]),
+                hasta=float(medidas_fin[i]),
+                monto=float(montos[i])
+            )
+            db.session.add(monto_obj)
+            db.session.commit()
 
-        # Guardo rangos de presupuesto nuevos
-        medida_inicio_list = request.form.getlist("medida_inicio[]")
-        medida_fin_list = request.form.getlist("medida_fin[]")
-        monto_entre_medidas_list = request.form.getlist("monto_entre_medidas[]")
+            # Laminado opcional
+            laminado_val = laminados[i] if i < len(laminados) and laminados[i] else None
+            if laminado_val:
+                lam = Laminado(monto_id=monto_obj.id, monto_laminado=float(laminado_val))
+                db.session.add(lam)
 
-        for inicio, fin, monto in zip(
-            medida_inicio_list, medida_fin_list, monto_entre_medidas_list
-        ):
-            if inicio and fin and monto:
-                rango = PresupuestoMedidas(
-                    material_id=material.id,
-                    medida_inicio=float(inicio),
-                    medida_fin=float(fin),
-                    monto_entre_medidas=float(monto),
-                )
-                db.session.add(rango)
+            # Montados opcionales para este rango específico
+            nombres_montados_rango = request.form.getlist(f"nombre_montado_rango_{i}[]")
+            montos_montados_rango = request.form.getlist(f"monto_montado_rango_{i}[]")
+            
+            for j in range(len(nombres_montados_rango)):
+                if nombres_montados_rango[j] and j < len(montos_montados_rango) and montos_montados_rango[j]:
+                    montado = Montado(
+                        monto_id=monto_obj.id,
+                        nombre_material_montaje=nombres_montados_rango[j],
+                        monto_montado=float(montos_montados_rango[j])
+                    )
+                    db.session.add(montado)
 
-        # Guardo descuentos por cantidad nuevos
-        cantidad_inicio_list = request.form.getlist("cantidad_inicio[]")
-        cantidad_fin_list = request.form.getlist("cantidad_fin[]")
-        porcentaje_descuento_list = request.form.getlist("porcentaje_descuento[]")
+        # Descuentos opcionales
+        cant_inicio = request.form.getlist("cantidad_inicio[]")
+        cant_fin = request.form.getlist("cantidad_fin[]")
+        porc_desc = request.form.getlist("porcentaje_descuento[]")
 
-        for c_inicio, c_fin, p_desc in zip(
-            cantidad_inicio_list, cantidad_fin_list, porcentaje_descuento_list
-        ):
-            if c_inicio and c_fin and p_desc:
+        for i in range(len(cant_inicio)):
+            if cant_inicio[i] and cant_fin[i] and porc_desc[i]:
                 descuento = DescuentoCantidad(
                     material_id=material.id,
-                    cantidad_inicio=float(c_inicio),
-                    cantidad_fin=float(c_fin),
-                    porcentaje_descuento_por_cantidad=float(p_desc),
+                    cantidad_inicio=float(cant_inicio[i]),
+                    cantidad_fin=float(cant_fin[i]),
+                    porcentaje_descuento_por_cantidad=float(porc_desc[i])
                 )
                 db.session.add(descuento)
 
-        # Guardo materiales montados nuevos
-        nombre_montado_list = request.form.getlist("nombre_montado[]")
-        porcentaje_montado_list = request.form.getlist("porcentaje_por_montado[]")
-
-        for nombre, porcentaje in zip(nombre_montado_list, porcentaje_montado_list):
-            if nombre.strip() and porcentaje:
-                montado = MaterialMontado(
-                    material_id=material.id,
-                    nombre=nombre.strip(),
-                    porcentaje_por_montado=float(porcentaje),
-                )
-                db.session.add(montado)
-
-        try:
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            # Podés agregar un flash o loguear el error aquí
-
-        return redirect(url_for("admin.admin_panel"))
-
-    presupuestos = PresupuestoMedidas.query.filter_by(material_id=material.id).all()
-    descuentos = DescuentoCantidad.query.filter_by(material_id=material.id).all()
-
-    return render_template(
-        "edit_material.html",
-        material=material,
-        presupuestos=presupuestos,
-        descuentos=descuentos,
-    )
-
-
-
-@admin_routes.route("/edit_credenciales", methods=["GET", "POST"])
-@login_required("admin")
-def edit_credenciales():
-    if request.method == "GET":
-        credenciales = Credenciales.query.all()
-        return render_template("admin_panel.html", credenciales=credenciales)
-
-    credenciales = Credenciales.query.all()
-    cambios_realizados = False
-
-    for cred in credenciales:
-        nuevo_usuario = request.form.get(f"usuario_{cred.id}", "").strip()
-        actual = request.form.get(f"contrasena_actual_{cred.id}", "").strip()
-        nueva = request.form.get(f"contrasena_nueva_{cred.id}", "").strip()
-
-        # Validar cambio de usuario
-        if nuevo_usuario and nuevo_usuario != cred.usuario:
-            # Opcional: asegurarse de que no exista otro usuario igual
-            existente = Credenciales.query.filter_by(usuario=nuevo_usuario).first()
-            if existente and existente.id != cred.id:
-                flash(f'❌ El usuario "{nuevo_usuario}" ya está en uso.', "danger")
-                return redirect(url_for("admin.admin_panel"))
-
-            cred.usuario = nuevo_usuario
-            cambios_realizados = True
-
-        # Validar cambio de contraseña
-        if actual and nueva:
-            if check_password_hash(cred.contrasena, actual):
-                cred.contrasena = generate_password_hash(nueva)
-                cambios_realizados = True
-            else:
-                flash(
-                    f'❌ Contraseña actual incorrecta para el usuario "{cred.usuario}". No se actualizó.',
-                    "danger",
-                )
-                return redirect(url_for("admin.admin_panel"))
-
-        elif actual or nueva:
-            flash(
-                f'⚠️ Debes completar ambos campos de contraseña para cambiar la credencial de "{cred.usuario}".',
-                "warning",
-            )
-            return redirect(url_for("admin.admin_panel"))
-
-    try:
-        if cambios_realizados:
-            db.session.commit()
-            flash("✅ Credenciales actualizadas correctamente.", "success")
-        else:
-            flash("ℹ️ No se realizaron cambios.", "info")
-    except Exception as e:
-        db.session.rollback()
-        flash("❌ Ocurrió un error al guardar los cambios.", "danger")
-
-    return redirect(url_for("admin.admin_panel"))
-
-
-@admin_routes.route("/create_credencial", methods=["GET", "POST"])
-def create_credencial():
-    if request.method == "POST":
-        if request.is_json:
-            data = request.get_json()
-            usuario = data.get("usuario", "").strip()
-            contrasena_plana = data.get("contrasena", "").strip()
-        else:
-            usuario = request.form.get("usuario", "").strip()
-            contrasena_plana = request.form.get("contrasena", "").strip()
-
-        if not usuario or not contrasena_plana:
-            flash("Usuario y contraseña son requeridos.", "danger")
-            return redirect(url_for("create_credencial"))
-
-        existente = Credenciales.query.filter_by(usuario=usuario).first()
-        if existente:
-            flash("El usuario ya existe.", "warning")
-            return redirect(url_for("create_credencial"))
-
-        contrasena_encriptada = generate_password_hash(contrasena_plana)
-
-        nueva_cred = Credenciales(usuario=usuario, contrasena=contrasena_encriptada)
-        db.session.add(nueva_cred)
         db.session.commit()
-        flash("Credencial creada correctamente.", "success")
+        flash("Material actualizado correctamente", "success")
         return redirect(url_for("admin.admin_panel"))
+    
+    # Get related data for the template
+    montos = Monto.query.filter_by(material_id=material.id).all()
+    descuentos = DescuentoCantidad.query.filter_by(material_id=material.id).all()
+    
+    return render_template("edit_material.html", material=material, montos=montos, descuentos=descuentos)
 
-    return render_template("create_credencial.html")
+
+@admin_routes.route("/edit_credentials", methods=["GET", "POST"])
+@login_required("admin")
+def edit_credentials():
+    """Editar credenciales de administrador y cliente"""
+    if request.method == "POST":
+        # Obtener credenciales existentes
+        admin_cred = Credenciales.query.filter_by(usuario="admin").first()
+        client_cred = Credenciales.query.filter_by(usuario="client").first()
+        
+        # Actualizar contraseña de admin si se proporcionó
+        admin_password = request.form.get("admin_password", "").strip()
+        if admin_password:
+            if not admin_cred:
+                admin_cred = Credenciales(usuario="admin")
+                db.session.add(admin_cred)
+            admin_cred.contrasena = generate_password_hash(admin_password)
+        
+        # Actualizar contraseña de cliente si se proporcionó
+        client_password = request.form.get("client_password", "").strip()
+        if client_password:
+            if not client_cred:
+                client_cred = Credenciales(usuario="client")
+                db.session.add(client_cred)
+            client_cred.contrasena = generate_password_hash(client_password)
+        
+        db.session.commit()
+        flash("Credenciales actualizadas correctamente", "success")
+        return redirect(url_for("admin.admin_panel"))
+    
+    # GET: Mostrar formulario con credenciales actuales
+    admin_cred = Credenciales.query.filter_by(usuario="admin").first()
+    client_cred = Credenciales.query.filter_by(usuario="client").first()
+    
+    return render_template("edit_credentials.html", 
+                         admin_exists=admin_cred is not None,
+                         client_exists=client_cred is not None)

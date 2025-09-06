@@ -1,263 +1,167 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %}
+{% block content %}
 
-<!-- Botón de cerrar sesión -->
-<div class="d-flex justify-content-end mb-4">
+<!-- Botones de navegación -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <a href="{{ url_for('admin.edit_credentials') }}" class="btn btn-outline-primary">
+    <i class="bi bi-key me-2"></i>
+    Editar Credenciales
+  </a>
   <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">
     <i class="bi bi-box-arrow-right me-2"></i>
     Cerrar Sesión
   </a>
 </div>
 
-<!-- Incluir CSS externo -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_panel.css') }}">
 
-<!-- ========================= FORMULARIO PARA CARGA NUEVA ========================= -->
-{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
-%}
+<!-- Mensajes flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
 <div class="flash-container">
   {% for category, message in messages %}
-  <div
-    class="alert alert-{{ category }} alert-dismissible fade show"
-    role="alert"
-  >
+  <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
     {{ message }}
-    <button
-      type="button"
-      class="btn-close"
-      data-bs-dismiss="alert"
-      aria-label="Close"
-    ></button>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
   {% endfor %}
 </div>
-
 <script>
   setTimeout(function () {
-    const alerts = document.querySelectorAll(".alert");
-    alerts.forEach((alert) => {
+    document.querySelectorAll(".alert").forEach(alert => {
       alert.classList.remove("show");
       alert.classList.add("fade");
       setTimeout(() => alert.remove(), 300);
     });
-  }, 3000); // Cierra en 3 segundos
+  }, 3000);
 </script>
-{% endif %} {% endwith %}
+{% endif %}
+{% endwith %}
+
+<!-- Agregar Material y Rangos -->
 <div class="card-custom">
   <h2 class="mb-4">🧾 Agregar nuevo material</h2>
-
   <form method="post">
     <!-- MATERIAL -->
     <div class="mb-3">
       <label for="material" class="form-label">Nombre del material</label>
-      <input
-        type="text"
-        class="form-control"
-        id="material"
-        name="material"
-        required
-      />
+      <input type="text" class="form-control" id="material" name="material" required>
     </div>
 
-    <!-- LAMINADO -->
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <label for="laminado" class="form-label">% por laminado</label>
-        <input
-          type="number"
-          step="any"
-          min="0"
-          max="100"
-          class="form-control"
-          id="laminado"
-          name="laminado"
-          value="0"
-        />
-      </div>
-    </div>
-    <!-- MATERIALES MONTADOS -->
-    <h5 class="mt-4">📦 Materiales para Montaje</h5>
-    <div id="montados-container">
-      <div class="grupo-contenedor montado-group">
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none"
-          onclick="this.parentElement.remove()"
-        >
-          Eliminar
-        </button>
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">Nombre del material de montaje</label>
-            <input type="text" class="form-control" name="nombre_montado[]" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">% Aumento por montaje</label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              class="form-control"
-              name="porcentaje_por_montado[]"
-              value="0"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <button
-      type="button"
-      class="btn btn-outline-primary mb-4"
-      onclick="agregarMontado()"
-    >
-      + Agregar
-    </button>
-
-    <!-- PRESUPUESTOS -->
+    <!-- RANGOS DE PRESUPUESTO -->
     <h5 class="mt-4">📏 Rangos de presupuesto (cm²)</h5>
     <div id="presupuestos-container">
       <div class="grupo-contenedor presupuesto-group">
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none"
-          onclick="this.parentElement.remove()"
-        >
-          Eliminar
-        </button>
-        <div class="row g-3">
+        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none" onclick="this.parentElement.remove()">Eliminar</button>
+        <div class="row g-3 mb-3">
           <div class="col-md-4">
             <label class="form-label">Desde</label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              class="form-control"
-              name="medida_inicio[]"
-              required
-            />
+            <input type="number" step="any" min="0" class="form-control" name="medida_inicio[]" required>
           </div>
           <div class="col-md-4">
             <label class="form-label">Hasta</label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              class="form-control"
-              name="medida_fin[]"
-              required
-            />
+            <input type="number" step="any" min="0" class="form-control" name="medida_fin[]" required>
           </div>
           <div class="col-md-4">
             <label class="form-label">Monto</label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              class="form-control"
-              name="monto_entre_medidas[]"
-              required
-              value="0"
-            />
+            <input type="number" step="any" min="0" class="form-control" name="monto_entre_medidas[]" required value="0">
           </div>
         </div>
+
+        <!-- Laminado opcional -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Monto Laminado (opcional)</label>
+            <input type="number" step="any" min="0" class="form-control" name="laminado_new_new">
+          </div>
+        </div>
+
+        <!-- Montados opcionales -->
+        <h6>Materiales Montados (opcional)</h6>
+        <div class="montados-container" data-rango="0"></div>
+        <button type="button" class="btn btn-outline-primary mb-3" onclick="agregarMontado(0)">+ Agregar Montado</button>
       </div>
     </div>
-    <button
-      type="button"
-      class="btn btn-outline-primary mb-3"
-      onclick="agregarPresupuesto()"
-    >
-      + Agregar
-    </button>
+    <button type="button" class="btn btn-outline-primary mb-4" onclick="agregarPresupuesto()">+ Agregar Rango</button>
 
     <!-- DESCUENTOS -->
     <h5 class="mt-4">🎯 Descuentos por cantidad</h5>
     <div id="descuentos-container">
       <div class="grupo-contenedor descuento-group">
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none"
-          onclick="this.parentElement.remove()"
-        >
-          Eliminar
-        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-grupo d-none" onclick="this.parentElement.remove()">Eliminar</button>
         <div class="row g-3">
           <div class="col-md-4">
             <label class="form-label">Cantidad desde</label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              class="form-control"
-              name="cantidad_inicio[]"
-              required
-            />
+            <input type="number" step="any" min="0" class="form-control" name="cantidad_inicio[]" required>
           </div>
           <div class="col-md-4">
             <label class="form-label">Cantidad hasta</label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              class="form-control"
-              name="cantidad_fin[]"
-              required
-            />
+            <input type="number" step="any" min="0" class="form-control" name="cantidad_fin[]" required>
           </div>
           <div class="col-md-4">
             <label class="form-label">% Descuento</label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              max="100"
-              class="form-control"
-              name="porcentaje_descuento[]"
-              value="0"
-            />
+            <input type="number" step="any" min="0" max="100" class="form-control" name="porcentaje_descuento[]" value="0">
           </div>
         </div>
       </div>
     </div>
-    <button
-      type="button"
-      class="btn btn-outline-primary mb-4"
-      onclick="agregarDescuento()"
-    >
-      + Agregar
-    </button>
+    <button type="button" class="btn btn-outline-primary mb-4" onclick="agregarDescuento()">+ Agregar</button>
 
-    <!-- SUBMIT -->
     <div class="text-end">
       <button type="submit" class="btn btn-success">✅ Guardar Material</button>
     </div>
   </form>
 </div>
 
-<!-- ========================= BUSCADOR ========================= -->
+<!-- Buscador -->
 <form method="get" class="mb-4">
   <div class="input-group">
-    <input
-      type="text"
-      class="form-control"
-      name="busqueda"
-      placeholder="Buscar material..."
-      value="{{ request.args.get('busqueda', '') }}"
-    />
+    <input type="text" class="form-control" name="busqueda" placeholder="Buscar material..." value="{{ request.args.get('busqueda','') }}">
     <button type="submit" class="btn btn-outline-primary">Buscar</button>
-    <a
-      href="{{ url_for('admin.admin_panel') }}"
-      class="btn btn-outline-secondary"
-      >Limpiar</a
-    >
+    <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-outline-secondary">Limpiar</a>
   </div>
 </form>
 
-<!-- ========================= VISUALIZACIÓN DE DATOS ========================= -->
+<!-- Tablas de datos -->
 <h2 class="section-title">📄 Datos cargados</h2>
 
-<!-- Rangos de presupuesto -->
-<h4>📏 Rangos de Montos</h4>
+<!-- Tabla de Materiales -->
+<h4>📦 Materiales</h4>
+<div class="table-responsive mb-4">
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre del Material</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for material in materiales %}
+      <tr>
+        <td>{{ material.id }}</td>
+        <td>{{ material.nombre }}</td>
+        <td>
+          <a href="{{ url_for('admin.edit_material', material_id=material.id) }}" 
+             class="btn btn-sm btn-outline-primary me-2">
+            <i class="bi bi-pencil"></i> Editar
+          </a>
+          <a href="{{ url_for('admin.delete_material', material_id=material.id) }}" 
+             class="btn btn-sm btn-outline-danger"
+             onclick="return confirm('¿Estás seguro de que quieres eliminar este material?')">
+            <i class="bi bi-trash"></i> Eliminar
+          </a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" class="text-center">No hay materiales cargados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Tabla Montos, Laminado y Montados -->
+<h4>📏 Rangos, Laminado y Montados</h4>
 <div class="table-responsive mb-4">
   <table class="table table-bordered table-striped">
     <thead>
@@ -265,79 +169,47 @@
         <th>Material</th>
         <th>Desde (cm²)</th>
         <th>Hasta (cm²)</th>
-        <th>Monto por Unidad</th>
-        {% if login %}
-        <th>Acciones</th>
-        {% endif %}
+        <th>Monto</th>
+        <th>Monto Laminado</th>
+        <th>Montado en Material</th>
+        <th>Monto de Montado</th>
       </tr>
     </thead>
     <tbody>
-      {% for p in presupuestos %}
-      <tr>
-        <td>{{ p.material.nombre }}</td>
-        <td>{{ p.medida_inicio }}</td>
-        <td>{{ p.medida_fin }}</td>
-        <td>{{ p.monto_entre_medidas }}</td>
-        {% if login %}
-        <td>
-          <a
-            href="{{ url_for('admin.delete_material', material_id=p.material.id) }}"
-            class="btn btn-sm btn-danger"
-            onclick="return confirm('¿Eliminar este material por completo?');"
-            >Eliminar</a
-          >
-          <a
-            href="{{ url_for('admin.edit_material', material_id=p.material.id) }}"
-            class="btn btn-sm btn-warning"
-            >Editar</a
-          >
-        </td>
+      {% for monto in montos %}
+        {% set laminado = laminados_por_monto.get(monto.id) %}
+        {% set montados = montados_por_monto.get(monto.id, []) %}
+        {% if montados %}
+          {% for montado in montados %}
+          <tr>
+            <td>{{ monto.material.nombre }}</td>
+            <td>{{ monto.desde }}</td>
+            <td>{{ monto.hasta }}</td>
+            <td>{{ monto.monto }}</td>
+            <td>{{ laminado.monto_laminado if laminado else "" }}</td>
+            <td>{{ montado.nombre_material_montaje }}</td>
+            <td>{{ montado.monto_montado }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td>{{ monto.material.nombre }}</td>
+            <td>{{ monto.desde }}</td>
+            <td>{{ monto.hasta }}</td>
+            <td>{{ monto.monto }}</td>
+            <td>{{ laminado.monto_laminado if laminado else "" }}</td>
+            <td></td>
+            <td></td>
+          </tr>
         {% endif %}
-      </tr>
       {% else %}
-      <tr>
-        <td colspan="{% if login %}5{% else %}4{% endif %}" class="text-center">
-          No hay rangos cargados.
-        </td>
-      </tr>
+      <tr><td colspan="7" class="text-center">No hay rangos cargados.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-<!-- Montado en Material -->
-<h4>📦 Montado en Material</h4>
-<div class="table-responsive mb-4">
-  <table class="table table-bordered table-striped">
-    <thead>
-      <tr>
-        <th>Material Principal</th>
-        <th>Montado en Material</th>
-        <th>% Por montado</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% set total_montados = materiales | map(attribute='materiales_montados') | sum(start=[]) %}
-      {% if total_montados %}
-        {% for material in materiales %}
-          {% for montado in material.materiales_montados %}
-          <tr>
-            <td>{{ material.nombre }}</td>
-            <td>{{ montado.nombre }}</td>
-            <td>{{ montado.porcentaje_por_montado }}</td>
-          </tr>
-          {% endfor %}
-        {% endfor %}
-      {% else %}
-      <tr>
-        <td colspan="3" class="text-center">No hay montados.</td>
-      </tr>
-      {% endif %}
-    </tbody>
-  </table>
-</div>
-
-<!-- Descuentos por cantidad -->
+<!-- Tabla Descuentos -->
 <h4>🎯 Descuentos por Cantidad</h4>
 <div class="table-responsive mb-4">
   <table class="table table-bordered table-striped">
@@ -358,135 +230,63 @@
         <td>{{ d.porcentaje_descuento_por_cantidad }}%</td>
       </tr>
       {% else %}
-      <tr>
-        <td colspan="4" class="text-center">
-          No hay descuentos cargados.
-        </td>
-      </tr>
+      <tr><td colspan="4" class="text-center">No hay descuentos cargados.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-
-<!-- ========================= EDITAR CREDENCIALES ========================= -->
-<div class="card-custom">
-  <h2 class="mb-4">🔑 Editar Credenciales</h2>
-  <form
-    method="post"
-    action="{{ url_for('admin.edit_credenciales') }}"
-    class="credenciales-form"
-  >
-    {% for cred in credenciales %}
-    <div class="mb-3">
-      <label for="usuario_{{ cred.id }}">Usuario</label>
-      <input
-        type="text"
-        class="form-control"
-        id="usuario_{{ cred.id }}"
-        name="usuario_{{ cred.id }}"
-        value="{{ cred.usuario }}"
-      />
-    </div>
-    <div class="mb-3">
-      <label for="contrasena_actual_{{ cred.id }}">Contraseña Actual</label>
-      <div class="input-group">
-        <input
-          type="password"
-          class="form-control"
-          id="contrasena_actual_{{ cred.id }}"
-          name="contrasena_actual_{{ cred.id }}"
-          placeholder="Ingrese la contraseña actual"
-        />
-        <button type="button" class="btn btn-outline-secondary toggle-password" style="border-left: 0;" data-target="contrasena_actual_{{ cred.id }}">
-          <i class="bi bi-eye"></i>
-        </button>
-      </div>
-    </div>
-    <div class="mb-3">
-      <label for="contrasena_nueva_{{ cred.id }}">Nueva Contraseña</label>
-      <div class="input-group">
-        <input
-          type="password"
-          class="form-control"
-          id="contrasena_nueva_{{ cred.id }}"
-          name="contrasena_nueva_{{ cred.id }}"
-          placeholder="Ingrese la nueva contraseña"
-        />
-        <button type="button" class="btn btn-outline-secondary toggle-password" style="border-left: 0;" data-target="contrasena_nueva_{{ cred.id }}">
-          <i class="bi bi-eye"></i>
-        </button>
-      </div>
-    </div>
-    <hr />
-    {% endfor %}
-    <div class="text-end">
-      <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
-    </div>
-  </form>
-</div>
-
-<!-- ========================= JS ========================= -->
+<!-- JS para agregar rangos, descuentos y montados -->
 <script>
-  function agregarPresupuesto() {
-    const container = document.getElementById("presupuestos-container");
-    const original = document.querySelector(".presupuesto-group");
-    const clone = original.cloneNode(true);
+function agregarPresupuesto() {
+  const container = document.getElementById("presupuestos-container");
+  const original = document.querySelector(".presupuesto-group");
+  const clone = original.cloneNode(true);
+  clone.querySelectorAll("input").forEach(i => i.value = "");
+  clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
+  
+  // Actualizar el índice del rango para los montados
+  const rangoIndex = container.children.length; // Sin -1, porque el clon aún no está agregado
+  const montadosContainer = clone.querySelector(".montados-container");
+  const agregarBtn = clone.querySelector("button[onclick*='agregarMontado']");
+  
+  // Limpiar el contenedor de montados del clon
+  montadosContainer.innerHTML = "";
+  
+  montadosContainer.setAttribute("data-rango", rangoIndex);
+  agregarBtn.setAttribute("onclick", `agregarMontado(${rangoIndex})`);
+  
+  container.appendChild(clone);
+}
 
-    clone.querySelectorAll("input").forEach((input) => (input.value = ""));
-    clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
+function agregarDescuento() {
+  const container = document.getElementById("descuentos-container");
+  const original = document.querySelector(".descuento-group");
+  const clone = original.cloneNode(true);
+  clone.querySelectorAll("input").forEach(i => i.value = i.name.includes("porcentaje") ? "0" : "");
+  clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
+  container.appendChild(clone);
+}
 
-    container.appendChild(clone);
-  }
-
-  function agregarDescuento() {
-    const container = document.getElementById("descuentos-container");
-    const original = document.querySelector(".descuento-group");
-    const clone = original.cloneNode(true);
-
-    clone.querySelectorAll("input").forEach((input) => {
-      input.value = input.name.includes("porcentaje_descuento") ? "0" : "";
-    });
-    clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
-
-    container.appendChild(clone);
-  }
-
-  function agregarMontado() {
-    const container = document.getElementById("montados-container");
-    const original = document.querySelector(".montado-group");
-    const clone = original.cloneNode(true);
-
-    clone
-      .querySelectorAll("input")
-      .forEach(
-        (input) => (input.value = input.name.includes("porcentaje") ? "0" : "")
-      );
-    clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
-
-    container.appendChild(clone);
-  }
-
-  // Funcionalidad para mostrar/ocultar contraseñas
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.toggle-password').forEach(function(button) {
-      button.addEventListener('click', function() {
-        const targetId = this.getAttribute('data-target');
-        const passwordInput = document.getElementById(targetId);
-        const eyeIcon = this.querySelector('i');
-        
-        if (passwordInput.type === 'password') {
-          passwordInput.type = 'text';
-          eyeIcon.classList.remove('bi-eye');
-          eyeIcon.classList.add('bi-eye-slash');
-        } else {
-          passwordInput.type = 'password';
-          eyeIcon.classList.remove('bi-eye-slash');
-          eyeIcon.classList.add('bi-eye');
-        }
-      });
-    });
-  });
+function agregarMontado(rangoIndex) {
+  const container = document.querySelector(`.montados-container[data-rango="${rangoIndex}"]`);
+  const div = document.createElement("div");
+  div.className = "grupo-contenedor montado-group mb-2";
+  div.innerHTML = `
+    <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-grupo" onclick="this.parentElement.remove()">Eliminar</button>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Nombre del material de montaje</label>
+        <input type="text" class="form-control" name="nombre_montado_rango_${rangoIndex}[]" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Monto Montado</label>
+        <input type="number" step="any" min="0" class="form-control" name="monto_montado_rango_${rangoIndex}[]" value="0" required>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+}
 </script>
 
 {% endblock %}

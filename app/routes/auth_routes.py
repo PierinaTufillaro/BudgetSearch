@@ -1,8 +1,8 @@
 """Rutas de autenticación para clientes y administradores."""
 
 from flask import Blueprint, request, render_template, redirect, url_for, session
-from app.models import Material, Credenciales, MaterialMontado
-from datetime import datetime
+from app.models import Material, Credenciales, Montado, Monto
+from datetime import datetime, timezone
 from werkzeug.security import check_password_hash
 
 
@@ -25,23 +25,48 @@ def client_login():
         if cred and check_password_hash(cred.contrasena, clave):
             session.permanent = True
             session["user_type"] = "client"
-            session["login_time"] = datetime.utcnow().isoformat()
+            session["login_time"] = datetime.now(timezone.utc).isoformat()
+            
             materiales = Material.query.all()
             materiales_montados = {}
+            materiales_laminado = {}
+            
             for mat in materiales:
-                montajes = MaterialMontado.query.filter_by(material_id=mat.id).all()
-                materiales_montados[str(mat.id)] = [
-                    {
-                        "id": m.id,
-                        "nombre": m.nombre,
-                        "porcentaje": m.porcentaje_por_montado,
-                    }
-                    for m in montajes
-                ]
+                montajes = (
+                    Montado.query
+                    .join(Monto, Montado.monto_id == Monto.id)
+                    .filter(Monto.material_id == mat.id)
+                    .all()
+                )
+                
+                # Crear diccionario para evitar duplicados por nombre
+                montados_unicos = {}
+                for m in montajes:
+                    nombre = m.nombre_material_montaje
+                    if nombre not in montados_unicos:
+                        montados_unicos[nombre] = {
+                            "id": m.id,
+                            "nombre": nombre,
+                            "monto": m.monto_montado,
+                        }
+                
+                materiales_montados[str(mat.id)] = list(montados_unicos.values())
+                
+                # Verificar si hay laminado disponible para este material
+                from app.models import Laminado
+                montos_con_laminado = (
+                    Monto.query
+                    .join(Laminado, Monto.id == Laminado.monto_id)
+                    .filter(Monto.material_id == mat.id)
+                    .all()
+                )
+                materiales_laminado[str(mat.id)] = len(montos_con_laminado) > 0
+            
             return render_template(
                 "client_index.html",
                 materiales=materiales,
                 materiales_montados=materiales_montados,
+                materiales_laminado=materiales_laminado,
             )
         return render_template("client_login.html", error="Contraseña incorrecta")
     return render_template("client_login.html")
@@ -56,7 +81,7 @@ def admin_login():
         if cred and check_password_hash(cred.contrasena, password):
             session.permanent = True
             session["user_type"] = "admin"
-            session["login_time"] = datetime.utcnow().isoformat()
+            session["login_time"] = datetime.now(timezone.utc).isoformat()
             return redirect(url_for("admin.admin_panel"))
         else:
             return render_template(

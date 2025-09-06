@@ -42,45 +42,10 @@
       <input type="text" class="form-control" id="material" name="material" value="{{ material.nombre }}" required>
     </div>
 
-    <div class="mb-3">
-      <label for="laminado" class="form-label">% por laminado</label>
-      <input type="number" class="form-control" id="laminado" name="laminado" value="{{ material.porcentaje_por_laminado }}" step="any" min="0" max="100">
-    </div>
-
-    <!-- ======= Materiales Montados ======= -->
-    <h5 class="section-title">📦 Materiales Montados</h5>
-    <div id="montados-container">
-      {% for montado in material.materiales_montados %}
-      <div class="grupo-contenedor montado-group">
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-danger btn-eliminar-grupo"
-          onclick="this.parentElement.remove()"
-          title="Eliminar montaje"
-        >
-          &times;
-        </button>
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">Nombre del material de montaje</label>
-            <input type="text" class="form-control" name="nombre_montado[]" value="{{ montado.nombre }}" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">% Aumento por montaje</label>
-            <input type="number" step="any" min="0" class="form-control" name="porcentaje_por_montado[]" value="{{ montado.porcentaje_por_montado }}" required>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    <button type="button" class="btn btn-outline-primary mb-4" onclick="agregarMontado()">
-      + Agregar
-    </button>
-
     <!-- ======= Rangos de presupuesto ======= -->
     <h5 class="section-title">📏 Rangos de presupuesto</h5>
     <div id="presupuestos-container">
-      {% for p in presupuestos %}
+      {% for m in montos %}
       <div class="grupo-contenedor presupuesto-group">
         <button
           type="button"
@@ -90,25 +55,64 @@
         >
           &times;
         </button>
-        <div class="row g-3">
+
+        <div class="row g-3 mb-3">
           <div class="col-md-4">
             <label class="form-label">Desde (cm²)</label>
-            <input type="number" class="form-control" name="medida_inicio[]" value="{{ p.medida_inicio }}" step="any" required>
+            <input type="number" class="form-control" name="medida_inicio[]" value="{{ m.desde }}" step="any" required>
           </div>
           <div class="col-md-4">
             <label class="form-label">Hasta (cm²)</label>
-            <input type="number" class="form-control" name="medida_fin[]" value="{{ p.medida_fin }}" step="any" required>
+            <input type="number" class="form-control" name="medida_fin[]" value="{{ m.hasta }}" step="any" required>
           </div>
           <div class="col-md-4">
             <label class="form-label">Monto</label>
-            <input type="number" class="form-control" name="monto_entre_medidas[]" value="{{ p.monto_entre_medidas }}" step="any" required>
+            <input type="number" class="form-control" name="monto_entre_medidas[]" value="{{ m.monto }}" step="any" required>
           </div>
         </div>
+
+        <!-- Laminado opcional -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Monto Laminado (opcional)</label>
+            <input type="number" step="any" min="0" class="form-control" name="laminado_new_new" 
+                   value="{% if m.laminados %}{{ m.laminados[0].monto_laminado }}{% endif %}">
+          </div>
+        </div>
+
+        <!-- Montados opcionales -->
+        <h6>Materiales Montados (opcional)</h6>
+        <div class="montados-container" data-rango="{{ loop.index0 }}">
+          {% for montado in m.montados %}
+          <div class="grupo-contenedor montado-group">
+            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-grupo"
+                    onclick="this.parentElement.remove()" title="Eliminar montaje">
+              &times;
+            </button>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Nombre del material de montaje</label>
+                <input type="text" class="form-control" name="nombre_montado_rango_{{ loop.index0 }}[]" 
+                       value="{{ montado.nombre_material_montaje }}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Monto Montado</label>
+                <input type="number" step="any" min="0" class="form-control" 
+                       name="monto_montado_rango_{{ loop.index0 }}[]" value="{{ montado.monto_montado }}">
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button type="button" class="btn btn-outline-primary mb-3" 
+                onclick="agregarMontado({{ loop.index0 }})">
+          + Agregar Montado
+        </button>
       </div>
       {% endfor %}
     </div>
     <button type="button" class="btn btn-outline-primary mb-4" onclick="agregarPresupuesto()">
-      + Agregar
+      + Agregar Rango
     </button>
 
     <!-- ======= Descuentos por cantidad ======= -->
@@ -153,27 +157,20 @@
 </div>
 
 <script>
-  function agregarMontado() {
-    const container = document.getElementById("montados-container");
+  function agregarMontado(rangoIndex) {
+    const container = document.querySelector(`.montados-container[data-rango="${rangoIndex}"]`);
     const div = document.createElement("div");
-    div.className = "grupo-contenedor montado-group";
+    div.className = "grupo-contenedor montado-group mb-2";
     div.innerHTML = `
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-danger btn-eliminar-grupo"
-        onclick="this.parentElement.remove()"
-        title="Eliminar montaje"
-      >
-        &times;
-      </button>
+      <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-grupo" onclick="this.parentElement.remove()">Eliminar</button>
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Nombre del material de montaje</label>
-          <input type="text" class="form-control" name="nombre_montado[]" required>
+          <input type="text" class="form-control" name="nombre_montado_rango_${rangoIndex}[]" required>
         </div>
         <div class="col-md-6">
-          <label class="form-label">% Aumento por montaje</label>
-          <input type="number" step="any" min="0" class="form-control" name="porcentaje_por_montado[]" value="0" required>
+          <label class="form-label">Monto Montado</label>
+          <input type="number" step="any" min="0" class="form-control" name="monto_montado_rango_${rangoIndex}[]" value="0" required>
         </div>
       </div>
     `;
@@ -182,33 +179,23 @@
 
   function agregarPresupuesto() {
     const container = document.getElementById("presupuestos-container");
-    const div = document.createElement("div");
-    div.className = "grupo-contenedor presupuesto-group";
-    div.innerHTML = `
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-danger btn-eliminar-grupo"
-        onclick="this.parentElement.remove()"
-        title="Eliminar rango"
-      >
-        &times;
-      </button>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Desde (cm²)</label>
-          <input type="number" class="form-control" name="medida_inicio[]" step="any" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Hasta (cm²)</label>
-          <input type="number" class="form-control" name="medida_fin[]" step="any" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Monto</label>
-          <input type="number" class="form-control" name="monto_entre_medidas[]" step="any" required>
-        </div>
-      </div>
-    `;
-    container.appendChild(div);
+    const original = document.querySelector(".presupuesto-group");
+    const clone = original.cloneNode(true);
+    clone.querySelectorAll("input").forEach(i => i.value = "");
+    clone.querySelector(".btn-eliminar-grupo").classList.remove("d-none");
+    
+    // Actualizar el índice del rango para los montados
+    const rangoIndex = container.children.length;
+    const montadosContainer = clone.querySelector(".montados-container");
+    const agregarBtn = clone.querySelector("button[onclick*='agregarMontado']");
+    
+    // Limpiar el contenedor de montados del clon
+    montadosContainer.innerHTML = "";
+    
+    montadosContainer.setAttribute("data-rango", rangoIndex);
+    agregarBtn.setAttribute("onclick", `agregarMontado(${rangoIndex})`);
+    
+    container.appendChild(clone);
   }
 
   function agregarDescuento() {

@@ -1,12 +1,11 @@
 """Funciones auxiliares para encriptación y sesión."""
 
-from flask import session, redirect, url_for, flash, current_app as app
+from flask import session, redirect, url_for, flash, current_app
 from functools import wraps
-from datetime import datetime
-import os
+from datetime import datetime, timezone
 
 
-def login_required(role):
+def login_required(role: str):
     """Protege rutas según el rol de usuario y controla expiración de sesión."""
     def decorator(f):
         @wraps(f)
@@ -24,9 +23,9 @@ def login_required(role):
             # Verificar expiración de sesión
             if 'login_time' in session:
                 try:
-                    now = datetime.utcnow()
+                    now = datetime.now(timezone.utc)
                     login_time = datetime.fromisoformat(session['login_time'])
-                    session_lifetime = app.permanent_session_lifetime
+                    session_lifetime = current_app.permanent_session_lifetime
                     
                     if now - login_time > session_lifetime:
                         session.clear()
@@ -43,22 +42,15 @@ def login_required(role):
     return decorator
 
 
-def cleanup_expired_sessions():
-    """Función para limpiar sesiones expiradas (puede ser llamada periódicamente)"""
-    # Esta función puede ser llamada por un cron job o scheduler
-    # Por ahora, la limpieza se hace en cada request a través del decorator
-    pass
-
-
-def get_session_remaining_time():
+def get_session_remaining_time() -> str | None:
     """Obtiene el tiempo restante de la sesión actual en formato legible"""
     if 'login_time' not in session:
         return None
     
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         login_time = datetime.fromisoformat(session['login_time'])
-        session_lifetime = app.permanent_session_lifetime
+        session_lifetime = current_app.permanent_session_lifetime
         remaining = session_lifetime - (now - login_time)
         
         if remaining.total_seconds() <= 0:
