@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- Botón de cerrar sesión -->
 <div class="d-flex justify-content-end mb-4">
   <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">
     <i class="bi bi-box-arrow-right me-2"></i>
@@ -9,13 +8,12 @@
   </a>
 </div>
 
-<!-- Incluir CSS externo -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/client_index.css') }}">
 
 <div class="card-custom">
   <h2 class="mb-4">Calcular Presupuesto</h2>
 
-  <form method="post" action="{{ url_for("client.client_index") }}">
+  <form method="post" action="{{ url_for('client.client_index') }}">
     <div class="row g-3 mb-3">
       <div class="col-md-6">
         <label for="ancho" class="form-label">Ancho (cm)</label>
@@ -47,21 +45,18 @@
         <option value="" selected>Sin montaje</option>
       </select>
       <div class="form-text text-muted">
-        Seleccione un tipo de montaje si lo desea, o deje "Sin montaje" para continuar
+        Seleccione un tipo de montaje si lo desea, o deje "Sin montaje"
       </div>
     </div>
-    
-  
+
     <div class="mb-3">
       <label for="cantidad" class="form-label">Cantidad</label>
       <input type="number" step="1" min="1" class="form-control" id="cantidad" name="cantidad" required value="{{ request.form.cantidad }}">
     </div>
 
-    <div class="form-check mb-4">
+    <div class="form-check mb-4" id="laminado-div" style="display:none;">
       <input class="form-check-input" type="checkbox" id="laminado" name="laminado" {% if request.form.laminado %}checked{% endif %}>
-      <label class="form-check-label" for="laminado">
-        Incluir laminado
-      </label>
+      <label class="form-check-label" for="laminado">Incluir laminado</label>
     </div>
 
     <button type="submit" class="btn btn-success">Calcular Presupuesto</button>
@@ -73,66 +68,72 @@
     {% else %}
       <div class="alert alert-success mt-4">
         <p><strong>Material:</strong> {{ resultado.material }}</p>
-        <p><strong>Área:</strong> {{ resultado.area }} cm²</p>
+        <p><strong>Dimensiones:</strong> {{ resultado.ancho }} × {{ resultado.alto }}</p>
+        <p><strong>Cantidad:</strong> {{ resultado.cantidad }} piezas</p>
         <p><strong>Laminado:</strong> {{ 'Sí' if resultado.laminado else 'No' }}</p>
-        <p><strong>Descuento por cantidad aplicado:</strong> {{ resultado.descuento_cantidad }} </p>
-        <p><strong>Montaje:</strong> 
-          {% if resultado.material_montado %}
-            {{ resultado.material_montado }} ({{ resultado.precio_montado }} adicional)
-          {% else %}
-            Sin montaje
-          {% endif %}
-        </p>
-        <p><strong>Precio unitario (por pieza):</strong> {{ resultado.precio_unitario }}</p>
-        <p><strong>Precio total:</strong> {{ resultado.precio_total }}</p>
+        <p><strong>Montaje:</strong> {{ resultado.material_montado or 'Sin montaje' }}</p>
+        <p><strong>Precio por pieza ({{ resultado.ancho }} × {{ resultado.alto }}):</strong> {{ resultado.precio_por_pieza }}</p>
+        <p><strong>Precio total ({{ resultado.cantidad }} piezas):</strong> {{ resultado.precio_total }}</p>
       </div>
     {% endif %}
-{% endif %}
-
+  {% endif %}
 </div>
 
 <script>
   const montajesPorMaterial = {{ materiales_montados | tojson }};
+  const laminadoPorMaterial = {{ materiales_laminado | tojson }};
   const materialSelect = document.getElementById("material");
   const montajeDiv = document.getElementById("montaje-div");
   const montajeSelect = document.getElementById("material_montado");
+  const laminadoDiv = document.getElementById("laminado-div");
 
   function actualizarMontajes() {
     const materialId = materialSelect.value;
     const montajes = montajesPorMaterial[materialId] || [];
 
-    // Limpiar opciones existentes y agregar la opción por defecto
     montajeSelect.innerHTML = '<option value="" selected>Sin montaje</option>';
 
     if (montajes.length > 0) {
       montajes.forEach(m => {
         const option = document.createElement("option");
         option.value = m.id;
-        option.textContent = `${m.nombre} (${m.porcentaje} %)`;
+        option.textContent = m.nombre;
         montajeSelect.appendChild(option);
       });
       montajeDiv.style.display = "block";
     } else {
       montajeDiv.style.display = "none";
     }
+
+    // Restaurar selección anterior si existe
+    const seleccionado = "{{ request.form.material_montado | default('') }}";
+    if (seleccionado) {
+      montajeSelect.value = seleccionado;
+    }
   }
 
-  materialSelect.addEventListener("change", actualizarMontajes);
+  function actualizarLaminado() {
+    const materialId = materialSelect.value;
+    const tieneLaminado = laminadoPorMaterial[materialId] || false;
 
-  window.addEventListener("DOMContentLoaded", () => {
-    if (materialSelect.value) {
-      actualizarMontajes();
-
-      // Restaurar valor seleccionado si existe
-      const seleccionado = "{{ request.form.material_montado | default('') }}";
-      if (seleccionado) {
-        montajeSelect.value = seleccionado;
-      }
+    if (tieneLaminado) {
+      laminadoDiv.style.display = "block";
+    } else {
+      laminadoDiv.style.display = "none";
+      // Desmarcar el checkbox si no hay laminado disponible
+      document.getElementById("laminado").checked = false;
     }
+  }
+
+  function actualizarOpciones() {
+    actualizarMontajes();
+    actualizarLaminado();
+  }
+
+  materialSelect.addEventListener("change", actualizarOpciones);
+  window.addEventListener("DOMContentLoaded", () => {
+    if (materialSelect.value) actualizarOpciones();
   });
 </script>
 
 {% endblock %}
-
-
-
