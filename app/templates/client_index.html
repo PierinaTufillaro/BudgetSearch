@@ -74,6 +74,8 @@
         <p><strong>Montaje:</strong> {{ resultado.material_montado or 'Sin montaje' }}</p>
         <p><strong>Precio por pieza ({{ resultado.ancho }} × {{ resultado.alto }}):</strong> {{ resultado.precio_por_pieza }}</p>
         <p><strong>Precio total ({{ resultado.cantidad }} piezas):</strong> {{ resultado.precio_total }}</p>
+        <hr>
+        <p class="text-muted small mb-0"><em>Valores expresados en dolares. Cotizacion dolar oficial venta BNA.</em></p>
       </div>
     {% endif %}
   {% endif %}
