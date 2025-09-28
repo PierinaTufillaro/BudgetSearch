@@ -62,14 +62,16 @@ def admin_panel():
         cant_inicio = request.form.getlist("cantidad_inicio[]")
         cant_fin = request.form.getlist("cantidad_fin[]")
         porc_desc = request.form.getlist("porcentaje_descuento[]")
+        
         for i in range(len(cant_inicio)):
-            descuento = DescuentoCantidad(
-                material_id=material.id,
-                cantidad_inicio=float(cant_inicio[i]),
-                cantidad_fin=float(cant_fin[i]),
-                porcentaje_descuento_por_cantidad=float(porc_desc[i])
-            )
-            db.session.add(descuento)
+            if cant_inicio[i] and cant_fin[i] and porc_desc[i]:
+                descuento = DescuentoCantidad(
+                    material_id=material.id,
+                    cantidad_inicio=float(cant_inicio[i]),
+                    cantidad_fin=float(cant_fin[i]),
+                    porcentaje_descuento_por_cantidad=float(porc_desc[i])
+                )
+                db.session.add(descuento)
 
         db.session.commit()
         flash("Material y rangos guardados correctamente", "success")
